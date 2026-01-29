@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ${PROJECTDIR}/code:/code
+      - ${PROJECTDIR}/media:/code/media
+    ports:
+      - "6080:8000"
+    environment:
+      - DB_NAME=${DBNAME}
+      - DB_USER=${DBUSER}
+      - DB_PASSWORD=${DBPASSWORD}
+      - DB_HOST=${DBHOST}
+      - DB_PORT=${DBPORT}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=True
