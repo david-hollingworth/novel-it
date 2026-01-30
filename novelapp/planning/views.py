@@ -54,6 +54,26 @@ def character_create_view(request, novel_pk):
     else:
         form = CharacterForm(novel=novel)
     return render(request, 'planning/character_form.html', {'novel': novel, 'form': form})
+@login_required
+def character_edit_view(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    character = get_object_or_404(Character, pk=pk, novel=novel, archived=False)
+    
+    if request.method == 'POST':
+        form = CharacterForm(request.POST, request.FILES, instance=character, novel=novel)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Character '{character.fullname}' updated.")
+            return redirect('character_detail', novel_pk=novel.pk, pk=character.pk)
+    else:
+        form = CharacterForm(instance=character, novel=novel)
+    
+    return render(request, 'planning/character_form.html', {
+        'novel': novel, 
+        'form': form,
+        'character': character,
+        'is_edit': True
+    })
 
 # Role/Type Management Views
 @login_required
@@ -121,6 +141,26 @@ def location_create_view(request, novel_pk):
     else:
         form = LocationForm(novel=novel)
     return render(request, 'planning/location_form.html', {'novel': novel, 'form': form})
+@login_required
+def location_edit_view(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    location = get_object_or_404(Location, pk=pk, novel=novel, archived=False)
+    
+    if request.method == 'POST':
+        form = LocationForm(request.POST, request.FILES, instance=location, novel=novel)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Location '{location.name}' updated.")
+            return redirect('location_detail', novel_pk=novel.pk, pk=location.pk)
+    else:
+        form = LocationForm(instance=location, novel=novel)
+    
+    return render(request, 'planning/location_form.html', {
+        'novel': novel, 
+        'form': form,
+        'location': location,
+        'is_edit': True
+    })
 
 @login_required
 def item_create_view(request, novel_pk):
@@ -136,3 +176,23 @@ def item_create_view(request, novel_pk):
     else:
         form = ItemForm(novel=novel)
     return render(request, 'planning/item_form.html', {'novel': novel, 'form': form})
+@login_required
+def item_edit_view(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(Item, pk=pk, novel=novel, archived=False)
+    
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item, novel=novel)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Item '{item.name}' updated.")
+            return redirect('item_detail', novel_pk=novel.pk, pk=item.pk)
+    else:
+        form = ItemForm(instance=item, novel=novel)
+    
+    return render(request, 'planning/item_form.html', {
+        'novel': novel, 
+        'form': form,
+        'item': item,
+        'is_edit': True
+    })
