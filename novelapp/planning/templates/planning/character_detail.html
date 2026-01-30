@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ character.fullname }} - {{ novel.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
+        <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-6">
+                {% if character.image %}
+                <img src="{{ character.image.url }}" alt="{{ character.fullname }}"
+                    class="h-32 w-32 rounded-xl object-cover shadow-sm">
+                {% else %}
+                <div class="h-32 w-32 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                    <svg class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                {% endif %}
+                <div>
+                    <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                        <a href="{% url 'character_list' novel.pk %}" class="hover:text-indigo-600">Characters</a>
+                        <span class="mx-2">/</span>
+                        <span class="text-slate-900 font-medium">{{ character.fullname }}</span>
+                    </nav>
+                    <h1 class="text-3xl font-bold text-slate-900">{{ character.fullname }}</h1>
+                    <p class="text-indigo-600 font-medium mt-1 user-content">
+                        {{ character.role.name|default:"No role" }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit
+                    Character</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Info -->
+        <div class="lg:col-span-2 space-y-8">
+            <section class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Description</h2>
+                <div class="prose prose-indigo text-slate-600 max-w-none user-content">
+                    {{ character.description|default:"No description provided."|linebreaks }}
+                </div>
+            </section>
+
+            {% if character.personality %}
+            <section class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Personality</h2>
+                <div class="prose prose-indigo text-slate-600 max-w-none user-content">
+                    {{ character.personality|linebreaks }}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if character.relationships %}
+            <section class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Relationships</h2>
+                <div class="prose prose-indigo text-slate-600 max-w-none user-content">
+                    {{ character.relationships|linebreaks }}
+                </div>
+            </section>
+            {% endif %}
+
+            {% if character.interview %}
+            <section class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Character Interview
+                </h2>
+                <div class="prose prose-indigo text-slate-600 max-w-none user-content">
+                    {{ character.interview|linebreaks }}
+                </div>
+            </section>
+            {% endif %}
+
+            <section class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Notes</h2>
+                <div class="prose prose-indigo text-slate-600 max-w-none user-content">
+                    {{ character.notes|default:"No notes provided."|linebreaks }}
+                </div>
+            </section>
+        </div>
+
+        <!-- Attributes Sidebar -->
+        <div class="lg:col-span-1 space-y-8">
+            <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <h3
+                    class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
+                    Attributes</h3>
+                <dl class="space-y-4">
+                    <div>
+                        <dt class="text-xs text-slate-500 uppercase">First Name</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.first_name|default:"-" }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-slate-500 uppercase">Last Name</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.last_name|default:"-" }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-slate-500 uppercase">Nickname</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.nickname|default:"-" }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-slate-500 uppercase">Aliases</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.aliases|default:"-" }}
+                        </dd>
+                    </div>
+                    <div class="pt-4 border-t border-slate-200">
+                        <dt class="text-xs text-slate-500 uppercase">Age</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.age|default:"Unknown" }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-slate-500 uppercase">Gender</dt>
+                        <dd class="text-sm text-slate-900 font-medium user-content">
+                            {{ character.gender|default:"Unknown" }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

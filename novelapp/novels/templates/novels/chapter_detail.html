@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ chapter.title }} - {{ novel.title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                    <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
+                    <span class="mx-2">/</span>
+                    <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-slate-900 font-medium">Chapter {{ chapter.order }}</span>
+                </nav>
+                <h1 class="text-3xl font-bold text-slate-900">{{ chapter.title }}</h1>
+            </div>
+            <div class="flex space-x-2">
+                <button
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit
+                    Chapter</button>
+                <a href="{% url 'scene_create' novel.pk chapter.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add
+                    Scene</a>
+            </div>
+        </div>
+        <p class="text-slate-600 max-w-3xl user-content">{{ chapter.summary|default:"No summary provided." }}</p>
+        <div class="mt-6 flex space-x-6 text-sm">
+            <div class="flex items-center text-slate-500">
+                <span class="font-bold text-slate-900 mr-2">{{ chapter.word_count }}</span> Words in Chapter
+            </div>
+            <div class="flex items-center text-slate-500">
+                <span class="font-bold text-slate-900 mr-2">{{ scenes.count }}</span> Scenes
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenes List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
+        <ul class="divide-y divide-slate-200">
+            {% for scene in scenes %}
+            <li>
+                <a href="{% url 'scene_editor' novel.pk chapter.pk scene.pk %}"
+                    class="px-6 py-4 flex items-center justify-between hover:bg-slate-50">
+                    <div class="flex items-center">
+                        <span class="text-slate-400 font-medium mr-4 w-6">{{ scene.order }}</span>
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-900 user-content">{{ scene.title }}</h4>
+                            <p class="text-xs text-slate-500">
+                                {{ scene.word_count }} words &middot; Updated {{ scene.updated_at|timesince }} ago
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Markdown</span>
+                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </div>
+                </a>
+            </li>
+            {% empty %}
+            <li class="px-6 py-12 text-center text-slate-500">
+                No scenes created yet.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

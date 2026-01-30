@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Editing: {{ scene.title }} - Novel It{% endblock %}
+
+{% block content %}
+<div class="h-full flex flex-col space-y-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+        <div class="flex items-center space-x-4">
+            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" class="text-slate-400 hover:text-indigo-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-lg font-bold text-slate-900">{{ scene.title }}</h1>
+                <p class="text-xs text-slate-500">{{ novel.title }} &middot; {{ chapter.title }}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div id="save-status" class="text-xs text-slate-400 italic">Saved</div>
+            <div class="text-sm font-medium text-slate-700">
+                <span id="word-count">{{ scene.word_count }}</span> words
+            </div>
+            <button
+                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm">
+                Save Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Editor Placeholder (CodeMirror 6 will go here) -->
+    <div
+        class="flex-grow flex flex-col bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
+        <div
+            class="border-b border-slate-200 bg-slate-50 px-4 py-2 flex items-center space-x-4 text-xs font-medium text-slate-500">
+            <button class="text-indigo-600 border-b-2 border-indigo-600 pb-1">Editor</button>
+            <button class="hover:text-slate-900 pb-1">Preview</button>
+            <button class="hover:text-slate-900 pb-1">Notes</button>
+        </div>
+        <textarea id="scene-editor"
+            class="flex-grow p-8 focus:outline-none resize-none font-serif text-lg leading-relaxed text-slate-800"
+            placeholder="Once upon a time...">{{ scene.content }}</textarea>
+    </div>
+</div>
+
+<script>
+    // Simple word count calculation for the placeholder
+    const editor = document.getElementById('scene-editor');
+    const wordCountDisplay = document.getElementById('word-count');
+    const saveStatus = document.getElementById('save-status');
+
+    editor.addEventListener('input', function () {
+        const text = this.value;
+        const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+        wordCountDisplay.textContent = words.length;
+        saveStatus.textContent = 'Changes pending...';
+    });
+
+    // In the next phase, we'll integrate CodeMirror 6 and HTMX autosave here.
+</script>
+{% endblock %}

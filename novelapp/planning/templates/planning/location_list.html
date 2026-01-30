@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Locations: {{ novel.title }} - Novel It{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
+                <span class="mx-2">/</span>
+                <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 font-medium">Locations</span>
+            </nav>
+            <h1 class="text-3xl font-bold text-slate-900">Locations</h1>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'location_type_list' novel.pk %}"
+                class="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                Manage Types
+            </a>
+            <a href="{% url 'location_create' novel.pk %}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Add Location
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for location in locations %}
+        <a href="{% url 'location_detail' novel.pk location.pk %}"
+            class="block bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+            {% if location.image %}
+            <img src="{{ location.image.url }}" alt="{{ location.name }}" class="h-48 w-full object-cover">
+            {% else %}
+            <div class="h-48 w-full bg-slate-100 flex items-center justify-center text-slate-400">
+                <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </div>
+            {% endif %}
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900">{{ location.name }}</h3>
+                <p class="text-indigo-600 text-xs font-medium user-content">
+                    {{ location.type|default:"No type" }}
+                </p>
+                <p class="text-slate-500 text-sm line-clamp-2 mt-1 user-content">
+                    {{ location.description|default:"No description" }}
+                </p>
+            </div>
+        </a>
+        {% empty %}
+        <div
+            class="col-span-full bg-white shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+            <h3 class="mt-2 text-sm font-medium text-slate-900">No locations yet</h3>
+            <p class="mt-1 text-sm text-slate-500">Start by adding your first location.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

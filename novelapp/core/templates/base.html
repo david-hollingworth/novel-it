@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Novel It{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        typewriter: ['"Courier Prime"', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Global Form Improvements */
+        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        select,
+        textarea {
+            font-family: 'Courier Prime', monospace !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 0.25rem !important;
+            /* Sharper corners */
+            font-size: 1rem !important;
+            line-height: 1.5 !important;
+            background-color: #f8fafc !important;
+            /* bg-slate-50 */
+        }
+
+        textarea {
+            min-height: 120px;
+        }
+
+        /* User Content Font Application */
+        .user-content {
+            font-family: 'Courier Prime', monospace !important;
+        }
+
+        /* Adjusting form-control style padding */
+        .form-input,
+        .form-textarea,
+        .form-select,
+        .form-multiselect {
+            padding: 0.75rem 1rem !important;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+    <nav class="bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'dashboard' %}" class="text-2xl font-bold text-indigo-600">Novel It</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    {% if user.is_authenticated %}
+                    <span class="text-slate-600 mr-4">Hi, {{ user.username }}</span>
+                    <a href="{% url 'password_change' %}" class="text-slate-600 hover:text-indigo-600 mr-4">Password</a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-slate-600 hover:text-indigo-600">Logout</button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="text-slate-600 hover:text-indigo-600 mr-4">Login</a>
+                    <a href="{% url 'register' %}"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div
+                class="p-4 rounded-md {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-auto border-t border-slate-200 py-8 bg-white">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+            &copy; 2026 Novel It. All rights reserved.
+        </div>
+    </footer>
+</body>
+
+</html>

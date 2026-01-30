@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}My Novels - Novel It{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-slate-900">Your Novels</h1>
+        <a href="{% url 'novel_create' %}"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+            Create New Novel
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for novel in novels %}
+        <div
+            class="bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-2">
+                    <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600 user-content">
+                        {{ novel.title }}
+                    </a>
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4 user-content">
+                    {{ novel.description|default:"No description provided." }}
+                </p>
+                <div class="flex justify-between items-center text-xs text-slate-500">
+                    <span>{{ novel.word_count }} words</span>
+                    <span>Updated {{ novel.updated_at|timesince }} ago</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div
+            class="col-span-full bg-white shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-slate-900">No novels yet</h3>
+            <p class="mt-1 text-sm text-slate-500">Get started by creating your first novel.</p>
+            <div class="mt-6">
+                <a href="{% url 'novel_create' %}"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                    Create New Novel
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

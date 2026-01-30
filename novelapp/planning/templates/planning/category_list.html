@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage {{ title }} - {{ novel.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                <a href="{% url back_url novel.pk %}" class="hover:text-indigo-600">Back</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 font-medium">{{ title }}</span>
+            </nav>
+            <h1 class="text-3xl font-bold text-slate-900">{{ title }}</h1>
+        </div>
+    </div>
+
+    <!-- Add New -->
+    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-900 mb-4">Add New</h2>
+        <form method="POST" class="flex space-x-3">
+            {% csrf_token %}
+            <input type="text" name="name" placeholder="Name" required
+                class="block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            <button type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 whitespace-nowrap">Add</button>
+        </form>
+    </div>
+
+    <!-- Existing -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
+        <ul class="divide-y divide-slate-200">
+            {% for category in categories %}
+            <li class="px-6 py-4 flex items-center justify-between">
+                <span class="text-slate-900 font-medium user-content">{{ category.name }}</span>
+                <span class="text-xs text-slate-400">ID: {{ category.pk }}</span>
+            </li>
+            {% empty %}
+            <li class="px-6 py-8 text-center text-slate-500">
+                No items defined yet.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

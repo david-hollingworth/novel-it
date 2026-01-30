@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Characters: {{ novel.title }} - Novel It{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
+                <span class="mx-2">/</span>
+                <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 font-medium">Characters</span>
+            </nav>
+            <h1 class="text-3xl font-bold text-slate-900">Characters</h1>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'character_role_list' novel.pk %}"
+                class="inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                Manage Roles
+            </a>
+            <a href="{% url 'character_create' novel.pk %}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Add Character
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for character in characters %}
+        <a href="{% url 'character_detail' novel.pk character.pk %}"
+            class="block bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
+            <div class="p-6 flex items-start space-x-4">
+                {% if character.image %}
+                <img src="{{ character.image.url }}" alt="{{ character.fullname }}"
+                    class="h-16 w-16 rounded-full object-cover">
+                {% else %}
+                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                {% endif %}
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">{{ character.fullname }}</h3>
+                    <p class="text-indigo-600 text-xs font-medium user-content">
+                        {{ character.role|default:"No role" }}
+                    </p>
+
+                    <p class="text-slate-500 text-sm line-clamp-2 mt-1 user-content">
+                        {{ character.description|default:"No description" }}
+                    </p>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div
+            class="col-span-full bg-white shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+            <h3 class="mt-2 text-sm font-medium text-slate-900">No characters yet</h3>
+            <p class="mt-1 text-sm text-slate-500">Start by adding your first character.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
