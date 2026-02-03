@@ -5,7 +5,8 @@
 {% block content %}
 <div class="max-w-2xl mx-auto">
     <div class="bg-white p-8 rounded-lg border border-slate-200 shadow-sm">
-        <h1 class="text-2xl font-bold text-slate-900 mb-6">Add New Chapter</h1>
+        <h1 class="text-2xl font-bold text-slate-900 mb-6">{% if form.instance.pk %}Edit Chapter{% else %}Add New
+            Chapter{% endif %}</h1>
         <form method="POST" class="space-y-6">
             {% csrf_token %}
             {% for field in form %}
@@ -26,8 +27,9 @@
                 <a href="{% url 'novel_detail' novel.pk %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Cancel</a>
                 <button type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Create
-                    Chapter</button>
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">
+                    {% if form.instance.pk %}Save Changes{% else %}Create Chapter{% endif %}
+                </button>
             </div>
         </form>
     </div>

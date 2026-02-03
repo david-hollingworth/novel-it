@@ -12,6 +12,12 @@ urlpatterns = [
     path('<int:pk>/unarchive/', views.novel_unarchive_view, name='novel_unarchive'),
     path('<int:novel_pk>/chapter/create/', views.chapter_create_view, name='chapter_create'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/', views.chapter_detail_view, name='chapter_detail'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/edit/', views.chapter_edit_view, name='chapter_edit'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/archive/', views.chapter_archive_view, name='chapter_archive'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/restore/', views.chapter_restore_view, name='chapter_restore'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/delete/', views.chapter_delete_view, name='chapter_delete'),
+    path('<int:novel_pk>/chapters/archived/', views.archived_chapter_list_view, name='archived_chapter_list'),
+    path('<int:novel_pk>/chapters/reorder/', views.chapter_reorder_view, name='chapter_reorder'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/create/', views.scene_create_view, name='scene_create'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/editor/', views.scene_editor_view, name='scene_editor'),
 ]

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Restore Chapter?</h2>
+        <p class="text-slate-600 mb-6">
+            Are you sure you want to restore the chapter <strong>"{{ chapter.title }}"</strong>?
+            It will reappear in your novel's main chapter list.
+        </p>
+
+        <form method="post" class="flex items-center space-x-4">
+            {% csrf_token %}
+            <button type="submit"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                Yes, Restore Chapter
+            </button>
+            <a href="{% url 'archived_chapter_list' novel.pk %}"
+                class="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

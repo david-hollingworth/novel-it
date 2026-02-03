@@ -20,10 +20,10 @@ class NovelForm(forms.ModelForm):
 class ChapterForm(forms.ModelForm):
     class Meta:
         model = Chapter
-        fields = ['title', 'order']
+        fields = ['title', 'summary']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
-            'order': forms.NumberInput(attrs={'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
+            'summary': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
         }
 
 class SceneForm(forms.ModelForm):

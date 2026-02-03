@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Archived Chapters</h1>
+            <p class="mt-1 text-slate-500">
+                Archived chapters for <span class="font-medium text-slate-700">{{ novel.title }}</span>.
+            </p>
+        </div>
+        <a href="{% url 'novel_detail' novel.pk %}"
+            class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+            Back to Novel
+        </a>
+    </div>
+
+    <!-- Chapter Grid -->
+    {% if chapters %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for chapter in chapters %}
+        <div
+            class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-2 truncate">
+                    {{ chapter.title }}
+                </h3>
+                {% if chapter.summary %}
+                <p class="text-slate-600 text-sm mb-4 line-clamp-3">
+                    {{ chapter.summary }}
+                </p>
+                {% else %}
+                <p class="text-slate-400 text-sm mb-4 italic">No summary available.</p>
+                {% endif %}
+
+                <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                    <span class="text-xs text-slate-500">
+                        {{ chapter.get_scene_count }} scenes
+                    </span>
+                    <a href="{% url 'chapter_restore' novel.pk chapter.pk %}"
+                        class="text-sm font-medium text-green-600 hover:text-green-700 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        Restore
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-slate-300">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+            </path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-slate-900">No archived chapters</h3>
+        <p class="mt-1 text-sm text-slate-500">Archived chapters will appear here.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

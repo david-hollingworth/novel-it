@@ -18,9 +18,13 @@
                 <h1 class="text-3xl font-bold text-slate-900">{{ chapter.title }}</h1>
             </div>
             <div class="flex space-x-2">
-                <button
+                <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit
-                    Chapter</button>
+                    Chapter</a>
+                <a href="{% url 'chapter_archive' novel.pk chapter.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archive</a>
+                <a href="{% url 'chapter_delete' novel.pk chapter.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
                 <a href="{% url 'scene_create' novel.pk chapter.pk %}"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add
                     Scene</a>

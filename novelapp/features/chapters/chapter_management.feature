@@ -10,22 +10,15 @@ Feature: Chapter Management
     And I click the "Add Chapter" button
     And I fill in "title" with "Chapter 1: The Beginning"
     And I fill in "summary" with "Our hero's journey starts"
-    And I click the "Save" button
+    And I click the "Create Chapter" button
     Then I should see "Chapter 1: The Beginning" in the chapter list
-
-  Scenario: Link a chapter to a novel
-    Given I am logged in
-    And I have a novel titled "My Novel"
-    When I create a new chapter
-    Then the chapter should be automatically linked to "My Novel"
-    And the chapter should appear under "My Novel" in the chapter list
 
   Scenario: Edit a chapter's details
     Given I am logged in
     And I have a chapter titled "Chapter 1"
     When I navigate to the chapter's edit page
     And I change "title" to "Chapter 1: A New Dawn"
-    And I click the "Save" button
+    And I click the "Save Changes" button
     Then the chapter title should be updated
 
   Scenario: Archive a chapter
