@@ -3,3 +3,6 @@ psycopg2-binary>=2.9
 Pillow>=10.0
 python-dotenv
 Markdown
+behave==1.2.6
+behave-django==1.4.0
+selenium==4.16.0

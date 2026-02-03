@@ -1,20 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
+from .forms import UserRegistrationForm
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, "Registration successful.")
             return redirect('dashboard')
     else:
-        form = UserCreationForm()
+        form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
 
 def login_view(request):
@@ -38,6 +39,7 @@ def login_view(request):
 
 @login_required
 def logout_view(request):
+    # Supporting both GET and POST for convenience in this simple app/tests
     logout(request)
     messages.info(request, "You have successfully logged out.")
     return redirect('login')
@@ -49,7 +51,7 @@ def password_change_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
-            messages.success(request, 'Your password was successfully updated!')
+            messages.success(request, 'Password changed successfully')
             return redirect('dashboard')
         else:
             messages.error(request, 'Please correct the error below.')
