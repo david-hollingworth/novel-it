@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Archived Novels - Novel It{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-slate-900">Archived Novels</h1>
+        <a href="{% url 'novel_list' %}" class="text-indigo-600 hover:text-indigo-900 font-medium">
+            &larr; Back to My Novels
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for novel in novels %}
+        <div class="bg-slate-50 overflow-hidden shadow-sm rounded-lg border border-slate-200">
+            <div class="p-6 opacity-75">
+                <h3 class="text-lg font-semibold text-slate-900 mb-2">
+                    {{ novel.title }}
+                </h3>
+                <p class="text-slate-600 text-sm line-clamp-3 mb-4 user-content">
+                    {{ novel.description|default:"No description provided." }}
+                </p>
+                <div class="flex justify-between items-center text-xs text-slate-500 mb-4">
+                    <span>{{ novel.word_count }} words</span>
+                    <span>Updated {{ novel.updated_at|timesince }} ago</span>
+                </div>
+                <div class="flex justify-end">
+                    <a href="{% url 'novel_unarchive' novel.pk %}"
+                        class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                        Unarchive
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div
+            class="col-span-full bg-slate-50 shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-slate-900">No archived novels</h3>
+            <p class="mt-1 text-sm text-slate-500">Novels you archive will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

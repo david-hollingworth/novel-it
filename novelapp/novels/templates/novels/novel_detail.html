@@ -19,6 +19,8 @@
                 <a href="{% url 'novel_edit' novel.pk %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit
                     Details</a>
+                <a href="{% url 'novel_archive' novel.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archive</a>
                 <a href="{% url 'novel_delete' novel.pk %}"
                     class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
                 <a href="{% url 'chapter_create' novel.pk %}"

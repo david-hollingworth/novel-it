@@ -113,3 +113,28 @@ def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
         'chapter': scene.chapter,
         'scene': scene
     })
+
+@login_required
+def novel_archive_view(request, pk):
+    novel = get_object_or_404(Novel, pk=pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        novel.archived = True
+        novel.save()
+        messages.success(request, f"Novel '{novel.title}' archived successfully.")
+        return redirect('novel_list')
+    return render(request, 'novels/novel_confirm_archive.html', {'novel': novel})
+
+@login_required
+def novel_unarchive_view(request, pk):
+    novel = get_object_or_404(Novel, pk=pk, user=request.user, archived=True)
+    if request.method == 'POST':
+        novel.archived = False
+        novel.save()
+        messages.success(request, f"Novel '{novel.title}' unarchived successfully.")
+        return redirect('novel_list')
+    return render(request, 'novels/novel_confirm_unarchive.html', {'novel': novel})
+
+@login_required
+def archived_novel_list_view(request):
+    novels = Novel.objects.filter(user=request.user, archived=True)
+    return render(request, 'novels/archived_novel_list.html', {'novels': novels})

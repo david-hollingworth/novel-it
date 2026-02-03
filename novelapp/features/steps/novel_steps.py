@@ -217,8 +217,9 @@ def cancel_deletion(context):
 
 @then('I should not see "{title}" in the novel list')
 def not_see_in_novel_list(context, title):
-    # Verify in DB (Hard Delete: check absolute existence)
-    assert not Novel.objects.filter(title=title, user__username=context.current_user).exists()
+    # Verify not in active list (Deleted OR Archived)
+    # So we check that no 'active' (archived=False) novel exists with this title
+    assert not Novel.objects.filter(title=title, user__username=context.current_user, archived=False).exists()
     context.execute_steps('When I view my novels list')
     context.execute_steps(f'Then I should not see "{title}"')
 
@@ -238,3 +239,118 @@ def not_see_in_scene_list(context, title):
     from novels.models import Scene
     # Verify in DB (Hard Delete: check absolute existence)
     assert not Scene.objects.filter(title=title, chapter__novel__user__username=context.current_user).exists()
+
+# --- Novel Archiving Steps ---
+
+@when('I click the "Archive" button on "{novel_title}"')
+def click_archive_on_novel(context, novel_title):
+    novel = Novel.objects.get(title=novel_title, user__username=context.current_user)
+    context.current_novel = novel
+    url = reverse('novel_detail', kwargs={'pk': novel.pk})
+    if context.use_client:
+        context.response = context.test.client.get(url)
+        archive_url = reverse('novel_archive', kwargs={'pk': novel.pk})
+        context.response = context.test.client.get(archive_url)
+    else:
+        context.browser.get(context.base_url + url)
+        # Note: In selenium, we would click the link. For now, direct navigation/client is safer.
+        # But if we must click:
+        context.execute_steps('When I click the "Archive" button')
+
+@when('I confirm the archiving')
+def confirm_archiving(context):
+    if context.use_client:
+        url = reverse('novel_archive', kwargs={'pk': context.current_novel.pk})
+        context.response = context.test.client.post(url, follow=True)
+    else:
+        context.execute_steps('When I click the "Yes, Archive Novel" button')
+
+@when('I cancel the archiving')
+def cancel_archiving(context):
+    if context.use_client:
+        url = reverse('novel_detail', kwargs={'pk': context.current_novel.pk})
+        context.response = context.test.client.get(url)
+    else:
+        context.execute_steps('When I click the "Cancel" button')
+
+@then('I should see "{title}" in the archived novel list')
+def see_in_archived_list(context, title):
+    # Verify in DB
+    assert Novel.objects.filter(title=title, user__username=context.current_user, archived=True).exists()
+    # Verify in UI
+    url = reverse('archived_novel_list')
+    if context.use_client:
+        context.response = context.test.client.get(url)
+        content = normalize_text(context.response.content)
+        pattern = r'\b' + re.escape(normalize_text(title)) + r'\b'
+        assert re.search(pattern, content)
+    else:
+        context.browser.get(context.base_url + url)
+        assert title in context.browser.find_element(By.TAG_NAME, 'body').text
+
+@then('I should not see "{title}" in the archived novel list')
+def not_see_in_archived_list(context, title):
+    # Verify in DB (should check logic: if not archived, or if deleted)
+    # The requirement is that it is NOT in the list.
+    assert not Novel.objects.filter(title=title, user__username=context.current_user, archived=True).exists()
+    
+    # Verify in UI
+    url = reverse('archived_novel_list')
+    if context.use_client:
+        context.response = context.test.client.get(url)
+        content = normalize_text(context.response.content)
+        pattern = r'\b' + re.escape(normalize_text(title)) + r'\b'
+        assert not re.search(pattern, content)
+    else:
+        context.browser.get(context.base_url + url)
+        assert title not in context.browser.find_element(By.TAG_NAME, 'body').text
+
+@given('I have a novel titled "{title}" in the archived novel list')
+def have_archived_novel(context, title):
+    user = User.objects.get(username=context.current_user)
+    novel, created = Novel.objects.get_or_create(user=user, title=title, defaults={'archived': True})
+    if not created and not novel.archived:
+        novel.archived = True
+        novel.save()
+    context.current_novel = novel
+
+@when('I click the "Unarchive" button on "{novel_title}"')
+def click_unarchive_on_novel(context, novel_title):
+    novel = Novel.objects.get(title=novel_title, user__username=context.current_user)
+    context.current_novel = novel
+    url = reverse('archived_novel_list')
+    if context.use_client:
+        context.response = context.test.client.get(url)
+        unarchive_url = reverse('novel_unarchive', kwargs={'pk': novel.pk})
+        context.response = context.test.client.get(unarchive_url)
+    else:
+        context.browser.get(context.base_url + url)
+        # Assuming we click the unarchive link for the specific novel
+        # For simplicity, we navigate directly in test or use generic click step if ID is known
+        context.browser.get(context.base_url + reverse('novel_unarchive', kwargs={'pk': novel.pk}))
+
+@when('I confirm the unarchiving')
+def confirm_unarchiving(context):
+    if context.use_client:
+        url = reverse('novel_unarchive', kwargs={'pk': context.current_novel.pk})
+        context.response = context.test.client.post(url, follow=True)
+    else:
+        context.execute_steps('When I click the "Yes, Unarchive Novel" button')
+
+@when('I cancel the unarchiving')
+def cancel_unarchiving(context):
+    if context.use_client:
+        url = reverse('archived_novel_list')
+        context.response = context.test.client.get(url)
+    else:
+        context.execute_steps('When I click the "Cancel" button')
+
+@then('I should see "{title}" in the chapter list')
+def see_in_chapter_list(context, title):
+    from novels.models import Chapter
+    assert Chapter.objects.filter(title=title, novel__user__username=context.current_user, archived=False).exists()
+
+@then('I should see "{title}" in the scene list')
+def see_in_scene_list(context, title):
+    from novels.models import Scene
+    assert Scene.objects.filter(title=title, chapter__novel__user__username=context.current_user, archived=False).exists()
