@@ -4,6 +4,7 @@ from django.urls import reverse
 from novels.models import Novel
 from selenium.webdriver.common.by import By
 import sys
+import re
 
 def normalize_text(text):
     if isinstance(text, (bytes, str)):
@@ -19,6 +20,13 @@ def have_novel_with_desc(context, title, description):
     context.current_novel = novel
     context.initial_novel_count = 1
 
+@given('I have a novel titled "{title}"')
+def have_novel(context, title):
+    user = User.objects.get(username=context.current_user)
+    novel, created = Novel.objects.get_or_create(user=user, title=title)
+    context.current_novel = novel
+    context.initial_novel_count = Novel.objects.filter(user=user).count()
+
 @given('user "{username}" has created a novel titled "{title}"')
 @given('user "{username}" has a novel titled "{title}"')
 def user_has_novel(context, username, title):
@@ -27,13 +35,10 @@ def user_has_novel(context, username, title):
 
 @when('I navigate to the novel\'s edit page')
 def navigate_to_edit(context):
-    # Instead of going directly to /edit/, we go to detail and click the button
-    # This verifies the UI link actually works.
     url = reverse('novel_detail', kwargs={'pk': context.current_novel.pk})
     if context.use_client:
         context.response = context.test.client.get(url)
         context.current_path = url
-        # Now "click" the Edit Details link
         context.execute_steps('When I click the "Edit Details" button')
     else:
         context.browser.get(context.base_url + url)
@@ -65,10 +70,11 @@ def access_edit_page(context, title):
 def see_novel_in_list(context, title):
     if context.use_client:
         content = normalize_text(context.response.content)
-        if normalize_text(title) in content:
+        pattern = r'\b' + re.escape(normalize_text(title)) + r'\b'
+        if re.search(pattern, content):
             return
         context.response = context.test.client.get(reverse('novel_list'))
-        assert normalize_text(title) in normalize_text(context.response.content)
+        assert re.search(pattern, normalize_text(context.response.content))
     else:
         if reverse('novel_list') not in context.browser.current_url:
             context.browser.get(context.base_url + reverse('novel_list'))
@@ -144,9 +150,16 @@ def returned_to_novel(context):
 @then('I should not see "{title}"')
 def should_not_see(context, title):
     if context.use_client:
-        assert normalize_text(title) not in normalize_text(context.response.content)
+        content = context.response.content.decode('utf-8')
+        content_no_messages = re.sub(r'<div[^>]*class="[^"]*alert[^"]*"[^>]*>.*?</div>', '', content, flags=re.DOTALL | re.IGNORECASE)
+        content_no_messages = re.sub(r'<div[^>]*class="[^"]*message[^"]*"[^>]*>.*?</div>', '', content_no_messages, flags=re.DOTALL | re.IGNORECASE)
+        
+        content_clean = normalize_text(content_no_messages)
+        pattern = r'\b' + re.escape(normalize_text(title)) + r'\b'
+        assert not re.search(pattern, content_clean), f"Expected '{title}' not to be in content (excluding messages), but it was found."
     else:
-        assert title not in context.browser.find_element(By.TAG_NAME, 'body').text
+        body_text = context.browser.find_element(By.TAG_NAME, 'body').text
+        assert title not in body_text, f"Expected '{title}' not to be in body text, but it was found."
 
 @then('I should only see my own novels')
 def only_own_novels(context):
@@ -156,3 +169,72 @@ def only_own_novels(context):
         content = normalize_text(context.response.content)
         for novel in other_novels:
             assert normalize_text(novel.title) not in content
+            
+# --- Novel Deletion Steps ---
+
+@given('I have a chapter titled "{chapter_title}" in "{novel_title}"')
+def have_chapter_in_novel(context, chapter_title, novel_title):
+    from novels.models import Chapter
+    novel = Novel.objects.get(title=novel_title, user__username=context.current_user)
+    chapter, created = Chapter.objects.get_or_create(novel=novel, title=chapter_title, defaults={'order': novel.get_chapter_count() + 1})
+    context.current_chapter = chapter
+
+@given('I have a scene titled "{scene_title}" in "{chapter_title}"')
+def have_scene_in_chapter(context, scene_title, chapter_title):
+    from novels.models import Chapter, Scene
+    chapter = Chapter.objects.get(title=chapter_title, novel__user__username=context.current_user)
+    scene, created = Scene.objects.get_or_create(chapter=chapter, title=scene_title, defaults={'order': chapter.get_scene_count() + 1})
+    context.current_scene = scene
+
+@when('I click the "Delete" button on "{novel_title}"')
+def click_delete_on_novel(context, novel_title):
+    novel = Novel.objects.get(title=novel_title, user__username=context.current_user)
+    url = reverse('novel_detail', kwargs={'pk': novel.pk})
+    if context.use_client:
+        context.response = context.test.client.get(url)
+        context.current_novel = novel
+        delete_url = reverse('novel_delete', kwargs={'pk': novel.pk})
+        context.response = context.test.client.get(delete_url)
+    else:
+        context.browser.get(context.base_url + url)
+        context.execute_steps('When I click the "Delete" button')
+
+@when('I confirm the deletion')
+def confirm_deletion(context):
+    if context.use_client:
+        url = reverse('novel_delete', kwargs={'pk': context.current_novel.pk})
+        context.response = context.test.client.post(url, follow=True)
+    else:
+        context.execute_steps('When I click the "Yes, Delete Novel" button')
+
+@when('I cancel the deletion')
+def cancel_deletion(context):
+    if context.use_client:
+        url = reverse('novel_detail', kwargs={'pk': context.current_novel.pk})
+        context.response = context.test.client.get(url)
+    else:
+        context.execute_steps('When I click the "Cancel" button')
+
+@then('I should not see "{title}" in the novel list')
+def not_see_in_novel_list(context, title):
+    # Verify in DB (Hard Delete: check absolute existence)
+    assert not Novel.objects.filter(title=title, user__username=context.current_user).exists()
+    context.execute_steps('When I view my novels list')
+    context.execute_steps(f'Then I should not see "{title}"')
+
+@then('I should see "{title}" in the novel list')
+def see_in_novel_list(context, title):
+    context.execute_steps('When I view my novels list')
+    context.execute_steps(f'Then I should see "{title}" in my novels list')
+
+@then('I should not see "{title}" in the chapter list')
+def not_see_in_chapter_list(context, title):
+    from novels.models import Chapter
+    # Verify in DB (Hard Delete: check absolute existence)
+    assert not Chapter.objects.filter(title=title, novel__user__username=context.current_user).exists()
+
+@then('I should not see "{title}" in the scene list')
+def not_see_in_scene_list(context, title):
+    from novels.models import Scene
+    # Verify in DB (Hard Delete: check absolute existence)
+    assert not Scene.objects.filter(title=title, chapter__novel__user__username=context.current_user).exists()

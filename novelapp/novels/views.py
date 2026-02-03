@@ -26,7 +26,11 @@ def novel_create_view(request):
 @login_required
 def novel_detail_view(request, pk):
     novel = get_object_or_404(Novel, pk=pk, user=request.user, archived=False)
-    return render(request, 'novels/novel_detail.html', {'novel': novel})
+    chapters = novel.chapters.filter(archived=False)
+    return render(request, 'novels/novel_detail.html', {
+        'novel': novel,
+        'chapters': chapters
+    })
 
 @login_required
 def novel_update_view(request, pk):
@@ -49,9 +53,9 @@ def novel_update_view(request, pk):
 def novel_delete_view(request, pk):
     novel = get_object_or_404(Novel, pk=pk, user=request.user)
     if request.method == 'POST':
-        novel.archived = True
-        novel.save()
-        messages.success(request, f"Novel '{novel.title}' deleted successfully.")
+        title = novel.title
+        novel.delete()
+        messages.success(request, f"Novel '{title}' deleted successfully.")
         return redirect('novel_list')
     return render(request, 'novels/novel_confirm_delete.html', {'novel': novel})
 
@@ -74,7 +78,12 @@ def chapter_create_view(request, novel_pk):
 @login_required
 def chapter_detail_view(request, novel_pk, chapter_pk):
     chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
-    return render(request, 'novels/chapter_detail.html', {'chapter': chapter})
+    scenes = chapter.scenes.filter(archived=False)
+    return render(request, 'novels/chapter_detail.html', {
+        'novel': chapter.novel,
+        'chapter': chapter,
+        'scenes': scenes
+    })
 
 @login_required
 def scene_create_view(request, novel_pk, chapter_pk):
@@ -90,4 +99,17 @@ def scene_create_view(request, novel_pk, chapter_pk):
             return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
     else:
         form = SceneForm()
-    return render(request, 'novels/scene_form.html', {'form': form, 'chapter': chapter})
+    return render(request, 'novels/scene_form.html', {
+        'form': form,
+        'novel': chapter.novel,
+        'chapter': chapter
+    })
+
+@login_required
+def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    return render(request, 'novels/scene_editor.html', {
+        'novel': scene.chapter.novel,
+        'chapter': scene.chapter,
+        'scene': scene
+    })
