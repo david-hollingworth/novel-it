@@ -3,9 +3,6 @@ from selenium.webdriver.firefox.options import Options
 import os
 
 def before_all(context):
-    # Django setup - must come first
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'novelapp.settings_test')
-    django.setup()
     context.use_client = False
     options = Options()
     options.add_argument("--headless")
