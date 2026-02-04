@@ -324,9 +324,9 @@ def step_impl(context):
     raise StepNotImplementedError(u'Given I have a scene titled "Test Scene"')
 
 
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
+# @when(u'I navigate to the scene\'s page')
+# def step_impl(context):
+#     raise StepNotImplementedError(u'When I navigate to the scene\'s page')
 
 
 @when(u'I change the status to "Not Started"')
