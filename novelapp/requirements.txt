@@ -1,8 +1,8 @@
-Django>=5.0,<6.0
+Django
 psycopg2-binary>=2.9
 Pillow>=10.0
 python-dotenv
 Markdown
 behave==1.2.6
-behave-django==1.4.0
+git+https://github.com/behave/behave-django.git@main
 selenium==4.16.0
