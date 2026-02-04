@@ -10,31 +10,37 @@ pipeline {
         
         stage('Setup') {
             steps {
-                sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pip install behave behave-html-formatter
-                '''
+                dir('novelapp') {
+                    sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt
+                        pip install behave behave-html-formatter
+                    '''
+                }
             }
         }
         
         stage('Database Setup') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    python manage.py migrate
-                '''
+                dir('novelapp') {
+                    sh '''
+                        . venv/bin/activate
+                        python manage.py migrate
+                    '''
+                }
             }
         }
         
         stage('Run BDD Tests') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    behave --format html --outfile behave-report.html --format plain
-                '''
+                dir('novelapp') {
+                    sh '''
+                        . venv/bin/activate
+                        behave --format html --outfile behave-report.html --format plain
+                    '''
+                }
             }
         }
     }
@@ -45,7 +51,7 @@ pipeline {
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
-                reportDir: '.',
+                reportDir: 'novelapp',
                 reportFiles: 'behave-report.html',
                 reportName: 'Behave Test Report'
             ])
