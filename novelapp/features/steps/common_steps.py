@@ -28,13 +28,13 @@ def fill_field(context, field, value):
         "premise": "premise",
         "genre": "genre",
     }
+    
+    clean_field = field.lower()
+    field_name = field_map.get(clean_field, clean_field)
 
     # Add this block to store new password for later verification
     if 'new password' in field_name.lower() and 'confirm' not in field_name.lower():
         context.new_password = value
-    
-    clean_field = field.lower()
-    field_name = field_map.get(clean_field, clean_field)
     
     if context.use_client:
         context.form_data[field_name] = value
