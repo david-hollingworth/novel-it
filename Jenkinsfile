@@ -39,7 +39,7 @@ pipeline {
                     sh '''
                         . venv/bin/activate
                         export DJANGO_SETTINGS_MODULE=novelapp.settings_test
-                        behave --format html --outfile behave-report.html --format plain
+                        behave -f behave_html_formatter:HTMLFormatter -o behave-report.html
                     '''
                 }
             }
