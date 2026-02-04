@@ -27,17 +27,18 @@ pipeline {
                 dir('novelapp') {
                     sh '''
                         . venv/bin/activate
-                        python manage.py migrate
+                        python manage.py migrate --settings=novelapp.settings_test
                     '''
                 }
             }
         }
-        
+
         stage('Run BDD Tests') {
             steps {
                 dir('novelapp') {
                     sh '''
                         . venv/bin/activate
+                        export DJANGO_SETTINGS_MODULE=novelapp.settings_test
                         behave --format html --outfile behave-report.html --format plain
                     '''
                 }
