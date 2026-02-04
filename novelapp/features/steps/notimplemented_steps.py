@@ -1,4 +1,10 @@
 from behave.api.pending_step import StepNotImplementedError
+
+@when(u'I navigate to the scene\'s page')
+def step_impl(context):
+    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
+
+
 @then(u'I should see an error message about password strength')
 def step_impl(context):
     raise StepNotImplementedError(u'Then I should see an error message about password strength')
