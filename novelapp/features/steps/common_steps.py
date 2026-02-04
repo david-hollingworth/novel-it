@@ -33,8 +33,8 @@ def fill_field(context, field, value):
     field_name = field_map.get(clean_field, clean_field)
 
     # Add this block to store new password for later verification
-    if 'new password' in field_name.lower() and 'confirm' not in field_name.lower():
-        context.new_password = value
+    # if 'new password' in field_name.lower() and 'confirm' not in field_name.lower():
+    context.new_password = value
     
     if context.use_client:
         context.form_data[field_name] = value
