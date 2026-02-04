@@ -324,10 +324,6 @@ def step_impl(context):
     raise StepNotImplementedError(u'Given I have a scene titled "Test Scene"')
 
 
-# @when(u'I navigate to the scene\'s page')
-# def step_impl(context):
-#     raise StepNotImplementedError(u'When I navigate to the scene\'s page')
-
 
 @when(u'I change the status to "Not Started"')
 def step_impl(context):
@@ -344,10 +340,6 @@ def step_impl(context):
     raise StepNotImplementedError(u'Then the scene status should be "Not Started"')
 
 
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
-
 
 @when(u'I change the status to "In Progress"')
 def step_impl(context):
@@ -358,10 +350,6 @@ def step_impl(context):
 def step_impl(context):
     raise StepNotImplementedError(u'Then the scene status should be "In Progress"')
 
-
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
 
 
 @when(u'I change the status to "First Draft"')
@@ -374,10 +362,6 @@ def step_impl(context):
     raise StepNotImplementedError(u'Then the scene status should be "First Draft"')
 
 
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
-
 
 @when(u'I change the status to "Needs Review"')
 def step_impl(context):
@@ -389,10 +373,6 @@ def step_impl(context):
     raise StepNotImplementedError(u'Then the scene status should be "Needs Review"')
 
 
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
-
 
 @when(u'I change the status to "Final Draft"')
 def step_impl(context):
@@ -402,11 +382,6 @@ def step_impl(context):
 @then(u'the scene status should be "Final Draft"')
 def step_impl(context):
     raise StepNotImplementedError(u'Then the scene status should be "Final Draft"')
-
-
-@when(u'I navigate to the scene\'s page')
-def step_impl(context):
-    raise StepNotImplementedError(u'When I navigate to the scene\'s page')
 
 
 @when(u'I change the status to "Complete"')
