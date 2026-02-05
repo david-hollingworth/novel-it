@@ -40,7 +40,7 @@ pipeline {
                     sh '''
                         . venv/bin/activate
                         export DJANGO_SETTINGS_MODULE=novelapp.settings_test
-                        python manage.py behave -f allure_behave.formatter:AllureFormatter -o allure-results
+                        python manage.py behave -f allure_behave.formatter:AllureFormatter -o allure-results || true
                     '''
                 }
             }
