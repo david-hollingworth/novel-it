@@ -216,3 +216,16 @@ def login_new_pw(context):
 def pw_not_changed(context):
     user = User.objects.get(username=context.current_user)
     assert user.check_password(context.current_password)
+
+# Password validation steps
+@then('I should see an error message about password strength')
+def see_password_strength_error(context):
+    raise StepNotImplementedError('Then I should see an error message about password strength')
+
+@then('I should remain on the login page')
+def remain_on_login_page(context):
+    raise StepNotImplementedError('Then I should remain on the login page')
+
+@then('I should be redirected to the login page')
+def redirected_to_login(context):
+    raise StepNotImplementedError('Then I should be redirected to the login page')
