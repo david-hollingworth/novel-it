@@ -114,7 +114,7 @@ def should_be_logged_in(context):
             f"Expected 200, got {context.response.status_code}"
 
         current_path = context.response.request['PATH_INFO']
-        expected_paths = [reverse('dashboard'), reverse('novel_list')]
+        expected_paths = [reverse('dashboard'), reverse('novels')]
 
         # Improved Assertion with Debug Info
         if current_path not in expected_paths:
