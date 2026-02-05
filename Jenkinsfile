@@ -16,7 +16,8 @@ pipeline {
                         . venv/bin/activate
                         pip install --upgrade pip
                         pip install -r requirements.txt
-                        pip install behave behave-html-formatter
+                        pip install behave 
+                        pip install allure-behave
                     '''
                 }
             }
@@ -39,7 +40,7 @@ pipeline {
                     sh '''
                         . venv/bin/activate
                         export DJANGO_SETTINGS_MODULE=novelapp.settings_test
-                        python manage.py behave --format behave_html_formatter:HTMLFormatter --outfile behave-report.html
+                        python manage.py behave -f allure_behave.formatter:AllureFormatter -o allure-results
                     '''
                 }
             }
@@ -48,14 +49,13 @@ pipeline {
     
     post {
         always {
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'novelapp',
-                reportFiles: 'behave-report.html',
-                reportName: 'Behave Test Report'
-            ])
+            script {
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    results: [[path: 'novelapp/allure-results']]
+                ])
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ from django.urls import reverse
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from behave.api.pending_step import StepNotImplementedError
 
 @given('I have a registered account with username "{username}" and password "{password}"')
 def registered_account(context, username, password):
