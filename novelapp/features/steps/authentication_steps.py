@@ -114,18 +114,34 @@ def should_be_logged_in(context):
             f"Expected 200, got {context.response.status_code}"
 
         current_path = context.response.request['PATH_INFO']
-        expected_paths = [reverse('dashboard'), reverse('novels')]
+        expected_paths = [reverse('dashboard'), reverse('novel_list')]
 
         # Improved Assertion with Debug Info
         if current_path not in expected_paths:
-            # If we are still on login, let's print the form errors to see WHY
+            # Debug information
+            print(f"\n=== LOGIN DEBUG INFO ===")
+            print(f"Current path: {current_path}")
+            print(f"Expected paths: {expected_paths}")
+            print(f"Response status: {context.response.status_code}")
+            
+            # Check if form is in context
             if 'form' in context.response.context:
                 print(f"Form Errors: {context.response.context['form'].errors}")
+            
+            # Check what data was posted
+            if hasattr(context, 'form_data'):
+                print(f"Form data posted: {context.form_data}")
+            
+            # Check if user is authenticated
+            if hasattr(context.response, 'wsgi_request'):
+                print(f"User authenticated: {context.response.wsgi_request.user.is_authenticated}")
+                print(f"User: {context.response.wsgi_request.user}")
             
             # Fail with a clear message
             assert current_path in expected_paths, \
                 f"Expected to be on dashboard, but was at: {current_path}"
         return
+    
 # def should_be_logged_in(context):
 #     if context.use_client:
 #         assert context.response.status_code == 200
@@ -237,15 +253,3 @@ def pw_not_changed(context):
     user = User.objects.get(username=context.current_user)
     assert user.check_password(context.current_password)
 
-# Password validation steps
-@then('I should see an error message about password strength')
-def see_password_strength_error(context):
-    raise StepNotImplementedError('Then I should see an error message about password strength')
-
-@then('I should remain on the login page')
-def remain_on_login_page(context):
-    raise StepNotImplementedError('Then I should remain on the login page')
-
-@then('I should be redirected to the login page')
-def redirected_to_login(context):
-    raise StepNotImplementedError('Then I should be redirected to the login page')

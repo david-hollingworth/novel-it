@@ -21,19 +21,21 @@ def before_all(context):
         print(f"Warning: Firefox not available - Selenium tests will be skipped: {e}")
         context.browser = None  # Set to None if Firefox fails
 
-def after_all(context):
-    if hasattr(context, 'browser') and context.browser is not None:
-        context.browser.quit()
-
 def before_scenario(context, scenario):
-    context.form_data = {}
+    context.form_data = {}  # Add this line
     context.response = None
-    
+    # Use client by default for everything unless tagged with selenium
     if 'selenium' in scenario.effective_tags:
         if context.browser is None:
             scenario.skip("Selenium/Firefox not available in this environment")
             return
         context.use_client = False
-        context.browser.delete_all_cookies()
+        if hasattr(context, 'browser'):
+            context.browser.delete_all_cookies()
     else:
         context.use_client = True
+
+def after_all(context):
+    if hasattr(context, 'browser') and context.browser is not None:
+        context.browser.quit()
+

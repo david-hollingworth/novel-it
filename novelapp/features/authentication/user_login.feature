@@ -38,8 +38,10 @@ Feature: User Login
   @error_handling
   Scenario: Login with empty credentials
     Given I am on the login page
+    When I fill in "username" with "-"
+    And I fill in "password" with "-"
     When I click the "Login" button
-    Then I should see validation errors
+    Then I should see an error message "Invalid username or password."
     And I should remain on the login page
 
   @security

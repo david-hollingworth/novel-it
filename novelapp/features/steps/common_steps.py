@@ -15,29 +15,46 @@ def normalize_text(text):
 
 @when('I fill in "{field}" with "{value}"')
 def fill_field(context, field, value):
-    field_map = {
-        "username": "username",
-        "password": "password",
-        "email": "email",
-        "confirm password": "password2",
-        "current password": "old_password",
-        "new password": "new_password1",
-        "confirm new password": "new_password2",
-        "title": "title",
-        "description": "description",
-        "premise": "premise",
-        "genre": "genre",
-    }
-    
-    clean_field = field.lower()
-    field_name = field_map.get(clean_field, clean_field)
 
-    # Add this block to store new password for later verification
-    # if 'new password' in field_name.lower() and 'confirm' not in field_name.lower():
+    clean_field = field.lower()
+        
+    # Determine the correct field name based on context
+    if clean_field == "password":
+        # Check current path to determine if registration or login
+        current_path = getattr(context, 'current_path', '')
+        if 'register' in current_path:
+            field_name = "password1"  # Registration form
+        else:
+            field_name = "password"   # Login/other forms
+    elif clean_field == "confirm password":
+        field_name = "password2"
+    elif clean_field == "current password":
+        field_name = "old_password"
+    elif clean_field == "new password":
+        field_name = "new_password1"
+    elif clean_field == "confirm new password":
+        field_name = "new_password2"
+    else:
+        # Use simple mapping for other fields
+        simple_map = {
+            "username": "username",
+            "email": "email",
+            "title": "title",
+            "description": "description",
+            "premise": "premise",
+            "genre": "genre",
+        }
+        field_name = simple_map.get(clean_field, clean_field)   
+    
+    # Store new password for later verification
     context.new_password = value
     
     if context.use_client:
+        if not hasattr(context, 'form_data'):
+            context.form_data = {}
+        
         context.form_data[field_name] = value
+        print(f"DEBUG: Added {field_name}={value}, form_data is now: {context.form_data}")
         return
 
     field_id = f"id_{field_name}"
@@ -73,41 +90,51 @@ def clear_field(context, field):
 @when('I click the "{button_text}" button')
 def click_button(context, button_text):
     if context.use_client:
+        print(f"DEBUG click_button: form_data at start = {context.form_data}")
         clean_text = button_text.lower()
         
-        # Priority 1: Check for links in content
+        # Priority 1: Form submission if we have form data
+        if context.form_data:
+            if context.response and hasattr(context.response, 'request'):
+                current_path = context.response.request['PATH_INFO']
+            else:
+                current_path = getattr(context, 'current_path', '/')
+            
+            print(f"DEBUG: Posting form to {current_path} with data: {context.form_data}")
+            context.response = context.test.client.post(current_path, data=context.form_data, follow=True)
+            saved_form_data = context.form_data.copy()
+            context.form_data = {}
+            print(f"DEBUG: Posted {saved_form_data}, response status: {context.response.status_code}, redirected to: {context.response.request['PATH_INFO']}")
+            return
+        
+        # Priority 2: Check for links in content
         if context.response and context.response.content:
             content = context.response.content.decode('utf-8')
-            # Improved regex to handle newlines and whitespace in link text
-            # We replace spaces in button_text with \s+ to match any whitespace
             search_pattern = r'\s+'.join(map(re.escape, button_text.split()))
             pattern = f'<a[^>]+href="([^"]+)"[^>]*>[^<]*{search_pattern}[^<]*</a>'
             match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
             if match:
+                print(f"DEBUG: Found link matching '{button_text}', navigating")
                 url = match.group(1)
                 context.response = context.test.client.get(url, follow=True)
                 context.form_data = {}
                 return
         
-        # Priority 2: Hardcoded navigation links
+        # Priority 3: Hardcoded navigation links
         link_map = {
             "create new novel": reverse('novel_create'),
-            "cancel": reverse('novel_list'), # Fallback
+            "cancel": reverse('novel_list'),
+            "logout": reverse('logout'),
         }
         
-        if clean_text in link_map and not context.form_data:
+        if clean_text in link_map:
+            print(f"DEBUG: Found hardcoded link for '{button_text}'")
             context.response = context.test.client.get(link_map[clean_text], follow=True)
             context.form_data = {}
             return
-
-        # Priority 3: Form submission (POST)
-        if context.response and hasattr(context.response, 'request'):
-            current_path = context.response.request['PATH_INFO']
-        else:
-            current_path = getattr(context, 'current_path', '/')
-            
-        context.response = context.test.client.post(current_path, data=context.form_data, follow=True)
-        context.form_data = {}
+        
+        # Fallback
+        print(f"DEBUG: No action taken for button '{button_text}'")
         return
 
     xpath = f"//button[contains(normalize-space(text()), '{button_text}')] | //input[@type='submit' and @value='{button_text}'] | //a[contains(normalize-space(text()), '{button_text}')]"
@@ -141,8 +168,25 @@ def see_any_success(context):
 @then('I should see an error message "{message}"')
 def see_error_msg(context, message):
     if context.use_client:
-        assert normalize_text(message) in normalize_text(context.response.content)
+        content = normalize_text(context.response.content)
+        normalized_message = normalize_text(message)
+        
+        if normalized_message not in content:
+            # Debug: show what we're looking for vs what we got
+            print(f"\n=== ERROR MESSAGE DEBUG ===")
+            print(f"Looking for: '{normalized_message}'")
+            print(f"Current path: {context.response.request['PATH_INFO']}")
+            print(f"Status code: {context.response.status_code}")
+            print(f"Response content (first 500 chars):\n{content[:500]}")
+            
+            # Check if form errors exist
+            if 'form' in context.response.context:
+                print(f"Form errors: {context.response.context['form'].errors}")
+        
+        assert normalized_message in content, \
+            f"Expected error message '{message}' not found in response"
         return
+    
     WebDriverWait(context.browser, 10).until(
         lambda driver: normalize_text(message) in normalize_text(driver.find_element(By.TAG_NAME, 'body').text)
     )
@@ -171,3 +215,25 @@ def redirected_to_dashboard(context):
     WebDriverWait(context.browser, 10).until(
         lambda driver: dashboard_url in driver.current_url or driver.current_url.endswith('/') or novel_list_url in driver.current_url or "detail" in driver.current_url
     )
+
+@then('I should see an error message about password strength')
+def see_password_strength_error(context):
+    # Check for common password strength error messages
+    if context.use_client:
+        content = normalize_text(context.response.content)
+        password_errors = ['too short', 'too common', 'too similar', 'entirely numeric']
+        assert any(err in content for err in password_errors), \
+            "No password strength error found in response"
+        return
+
+@then('I should remain on the login page')
+def remain_on_login_page(context):
+    if context.use_client:
+        assert context.response.request['PATH_INFO'] == reverse('login')
+        return
+
+@then('I should be redirected to the login page')
+def redirected_to_login_page(context):
+    if context.use_client:
+        assert context.response.request['PATH_INFO'] == reverse('login')
+        return    
