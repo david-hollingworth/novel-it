@@ -93,7 +93,36 @@ def click_button(context, button_text):
         print(f"DEBUG click_button: form_data at start = {context.form_data}")
         clean_text = button_text.lower()
         
-        # Priority 1: Form submission if we have form data
+        # Priority 1: Navigation buttons (even if form_data exists)
+        navigation_buttons = ['cancel', 'logout', 'back']
+        link_map = {
+            "create new novel": reverse('novel_create'),
+            "cancel": reverse('novel_list'),
+            "logout": reverse('logout'),
+        }
+        
+        if clean_text in navigation_buttons or clean_text in link_map:
+            # Check for link in content first
+            if context.response and context.response.content:
+                content = context.response.content.decode('utf-8')
+                search_pattern = r'\s+'.join(map(re.escape, button_text.split()))
+                pattern = f'<a[^>]+href="([^"]+)"[^>]*>[^<]*{search_pattern}[^<]*</a>'
+                match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
+                if match:
+                    print(f"DEBUG: Found navigation link for '{button_text}'")
+                    url = match.group(1)
+                    context.response = context.test.client.get(url, follow=True)
+                    context.form_data = {}
+                    return
+            
+            # Use hardcoded link if exists
+            if clean_text in link_map:
+                print(f"DEBUG: Using hardcoded navigation for '{button_text}'")
+                context.response = context.test.client.get(link_map[clean_text], follow=True)
+                context.form_data = {}
+                return
+        
+        # Priority 2: Form submission if we have form data
         if context.form_data:
             if context.response and hasattr(context.response, 'request'):
                 current_path = context.response.request['PATH_INFO']
@@ -107,31 +136,22 @@ def click_button(context, button_text):
             print(f"DEBUG: Posted {saved_form_data}, response status: {context.response.status_code}, redirected to: {context.response.request['PATH_INFO']}")
             return
         
-        # Priority 2: Check for links in content
+        # Priority 3: Check for any other links in content
         if context.response and context.response.content:
             content = context.response.content.decode('utf-8')
             search_pattern = r'\s+'.join(map(re.escape, button_text.split()))
             pattern = f'<a[^>]+href="([^"]+)"[^>]*>[^<]*{search_pattern}[^<]*</a>'
             match = re.search(pattern, content, re.IGNORECASE | re.DOTALL)
             if match:
-                print(f"DEBUG: Found link matching '{button_text}', navigating")
+                print(f"DEBUG: Found link matching '{button_text}'")
                 url = match.group(1)
                 context.response = context.test.client.get(url, follow=True)
                 context.form_data = {}
                 return
         
-        # Priority 3: Hardcoded navigation links
-        link_map = {
-            "create new novel": reverse('novel_create'),
-            "cancel": reverse('novel_list'),
-            "logout": reverse('logout'),
-        }
-        
-        if clean_text in link_map:
-            print(f"DEBUG: Found hardcoded link for '{button_text}'")
-            context.response = context.test.client.get(link_map[clean_text], follow=True)
-            context.form_data = {}
-            return
+        # Fallback
+        print(f"DEBUG: No action taken for button '{button_text}'")
+        return
         
         # Fallback
         print(f"DEBUG: No action taken for button '{button_text}'")
