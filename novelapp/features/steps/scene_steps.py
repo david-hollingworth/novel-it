@@ -1,28 +1,9 @@
 from behave import given, when, then
 from behave.api.pending_step import StepNotImplementedError
 
-from novelapp.novels.models import Chapter
 
 # Scene creation steps
-@given('the novel has a chapter titled "{title}"')
-def novel_has_chapter(context, title):
-    assert hasattr(context, 'current_novel'), "No novel found! Make sure you have a 'Given I have a novel...' step before this."
-    
-    # 1. Get the novel from context - what's it called?
-    novel = context.current_novel
-    
-    # 2. You said order should always be 1
-    order = 1
-    
-    # 3. Create the chapter
-    chapter = Chapter.objects.create(
-        title=title,
-        novel=novel,
-        order=order
-    )
-    
-    # 4. Store in context - what should we call it?
-    context.current_chapter = chapter
+
 
 @given('I am viewing "{chapter}"')
 def viewing_chapter(context, chapter):
