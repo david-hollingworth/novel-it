@@ -1,7 +1,7 @@
 from behave import given, when, then
 from django.contrib.auth.models import User
 from django.urls import reverse
-from novels.models import Novel
+from novels.models import Novel, Chapter
 from selenium.webdriver.common.by import By
 import sys
 import re
@@ -26,6 +26,26 @@ def have_novel(context, title):
     novel, created = Novel.objects.get_or_create(user=user, title=title)
     context.current_novel = novel
     context.initial_novel_count = Novel.objects.filter(user=user).count()
+
+@given('the novel has a chapter titled "{title}"')
+def novel_has_chapter(context, title):
+    assert hasattr(context, 'current_novel'), "No novel found! Make sure you have a 'Given I have a novel...' step before this."
+    
+    # 1. Get the novel from context - what's it called?
+    novel = context.current_novel
+    
+    # 2. You said order should always be 1
+    order = 1
+    
+    # 3. Create the chapter
+    chapter = Chapter.objects.create(
+        title=title,
+        novel=novel,
+        order=order
+    )
+    
+    # 4. Store in context - what should we call it?
+    context.current_chapter = chapter
 
 @given('user "{username}" has created a novel titled "{title}"')
 @given('user "{username}" has a novel titled "{title}"')
