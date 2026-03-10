@@ -57,4 +57,10 @@
             </button>
         </div>
     </form>
+
+    {% if character %}
+    <div class="border-t border-slate-100 pt-4">
+        {% include "planning/modal_relationships.html" %}
+    </div>
+    {% endif %}
 </div>

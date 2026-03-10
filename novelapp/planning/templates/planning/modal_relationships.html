@@ -1,0 +1,260 @@
+{% comment %}
+  Relationships section partial.
+  Context: novel, entity, entity_type ('character'/'location'/'item'), relationships, 
+           relationship_types, all_characters, all_locations, all_items
+{% endcomment %}
+<div id="relationships-section" class="space-y-4">
+    <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Relationships</h3>
+        <button type="button"
+            onclick="document.getElementById('add-relationship-form').classList.toggle('hidden')"
+            class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">
+            + Add Relationship
+        </button>
+    </div>
+
+    <!-- Existing relationships -->
+    {% if relationships %}
+    <div class="space-y-2">
+        {% for item in relationships %}
+        <div class="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden"
+             x-data="{ editing: false, label: '{{ item.display_label|escapejs }}', reverseLabel: '{{ item.rel.reverse_label|escapejs }}', notes: '{{ item.rel.notes|escapejs }}' }">
+
+            <!-- Row view -->
+            <div class="flex items-center justify-between px-3 py-2" x-show="!editing">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                        {{ item.display_label }}
+                    </span>
+                    {% if item.other_type == 'character' %}
+                    <button type="button"
+                        hx-get="{% url 'modal_character_edit' novel.pk item.other.pk %}"
+                        hx-target="#planning-modal-content"
+                        class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                        {{ item.other }}
+                    </button>
+                    {% elif item.other_type == 'location' %}
+                    <button type="button"
+                        hx-get="{% url 'modal_location_edit' novel.pk item.other.pk %}"
+                        hx-target="#planning-modal-content"
+                        class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                        {{ item.other }}
+                    </button>
+                    {% elif item.other_type == 'item' %}
+                    <button type="button"
+                        hx-get="{% url 'modal_item_edit' novel.pk item.other.pk %}"
+                        hx-target="#planning-modal-content"
+                        class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                        {{ item.other }}
+                    </button>
+                    {% endif %}
+                    {% if item.rel.notes %}
+                    <span class="text-slate-400 text-xs italic">— {{ item.rel.notes }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-1 ml-2">
+                    <!-- Edit button -->
+                    <button type="button" @click="editing = true"
+                        class="text-slate-300 hover:text-indigo-500 transition-colors p-0.5" title="Edit">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>
+                    <!-- Delete button -->
+                    <button type="button"
+                        hx-post="{% url 'relationship_delete' novel.pk item.rel.pk %}"
+                        hx-vals='{"entity_type": "{{ entity_type }}", "entity_id": "{{ entity.pk }}"}'
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-target="#relationships-section"
+                        hx-swap="outerHTML"
+                        hx-confirm="Remove this relationship?"
+                        class="text-slate-300 hover:text-red-500 transition-colors p-0.5" title="Delete">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Inline edit form -->
+            <div class="px-3 py-3 space-y-2 border-t border-slate-200 bg-white" x-show="editing" x-cloak>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Edit Relationship</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-slate-500">Forward label</label>
+                        <input type="text" x-model="label"
+                            class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-slate-50 mt-0.5">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-500">Reverse label</label>
+                        <input type="text" x-model="reverseLabel"
+                            class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-slate-50 mt-0.5">
+                    </div>
+                </div>
+                <input type="text" x-model="notes" placeholder="Notes (optional)"
+                    class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-slate-50">
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" @click="editing = false"
+                        class="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                        Cancel
+                    </button>
+                    <button type="button"
+                        @click="
+                            if (!label || !reverseLabel) { alert('Both labels are required.'); return; }
+                            htmx.ajax('POST', '{% url 'relationship_edit' novel.pk item.rel.pk %}', {
+                                target: '#relationships-section',
+                                swap: 'outerHTML',
+                                values: {
+                                    entity_type: '{{ entity_type }}',
+                                    entity_id: '{{ entity.pk }}',
+                                    label: label,
+                                    reverse_label: reverseLabel,
+                                    notes: notes,
+                                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                                }
+                            });
+                            editing = false;
+                        "
+                        class="text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-slate-400 italic">No relationships yet.</p>
+    {% endif %}
+
+    <!-- Add relationship form (hidden by default) -->
+    <div id="add-relationship-form" class="hidden border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-3"
+         x-data="{
+            toType: 'character',
+            toId: '',
+            toName: '',
+            label: '',
+            reverseLabel: '',
+            searchQuery: '',
+            searchResults: [],
+            searching: false,
+            async search() {
+                if (this.searchQuery.length < 1) { this.searchResults = []; return; }
+                this.searching = true;
+                const res = await fetch(`{% url 'entity_search' novel.pk %}?type=${this.toType}&q=${encodeURIComponent(this.searchQuery)}`);
+                const data = await res.json();
+                this.searchResults = data.results;
+                this.searching = false;
+            },
+            selectResult(id, name) {
+                this.toId = id;
+                this.toName = name;
+                this.searchQuery = name;
+                this.searchResults = [];
+            },
+            selectPreset(forward, reverse) {
+                this.label = forward;
+                this.reverseLabel = reverse;
+            },
+            resetSearch() {
+                this.toId = '';
+                this.toName = '';
+                this.searchQuery = '';
+                this.searchResults = [];
+            }
+         }">
+
+        <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide">New Relationship</p>
+
+        <!-- Preset relationship types -->
+        {% if relationship_types %}
+        <div class="flex flex-wrap gap-1">
+            {% for rt in relationship_types %}
+            <button type="button"
+                @click="selectPreset('{{ rt.forward_label }}', '{{ rt.reverse_label }}')"
+                class="px-2 py-0.5 text-xs rounded-full border border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                {{ rt.forward_label }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Entity type selector -->
+        <div class="flex gap-2">
+            <label class="text-xs font-medium text-slate-500 self-center">Relates to:</label>
+            <select x-model="toType" @change="resetSearch()"
+                class="text-xs border border-slate-200 rounded px-2 py-1 bg-white">
+                <option value="character">Character</option>
+                <option value="location">Location</option>
+                <option value="item">Item</option>
+            </select>
+        </div>
+
+        <!-- Entity search -->
+        <div class="relative">
+            <input type="text" x-model="searchQuery" @input.debounce.300ms="search()"
+                placeholder="Search for an entity..."
+                class="w-full text-sm border border-slate-200 rounded px-3 py-1.5 bg-white">
+            <div x-show="searchResults.length > 0"
+                class="absolute z-10 w-full bg-white border border-slate-200 rounded shadow-lg mt-1 max-h-40 overflow-y-auto">
+                <template x-for="result in searchResults" :key="result.id">
+                    <button type="button"
+                        @click="selectResult(result.id, result.name)"
+                        class="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 text-slate-700"
+                        x-text="result.name">
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Labels -->
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="text-xs text-slate-500">Forward label</label>
+                <input type="text" x-model="label" placeholder="e.g. owns"
+                    class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white mt-0.5">
+            </div>
+            <div>
+                <label class="text-xs text-slate-500">Reverse label</label>
+                <input type="text" x-model="reverseLabel" placeholder="e.g. owned by"
+                    class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white mt-0.5">
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <input type="text" id="rel-notes" placeholder="Notes (optional)"
+            class="w-full text-sm border border-slate-200 rounded px-2 py-1 bg-white">
+
+        <!-- Hidden form fields + submit via HTMX -->
+        <div class="flex justify-end gap-2">
+            <button type="button"
+                onclick="document.getElementById('add-relationship-form').classList.add('hidden')"
+                class="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5">
+                Cancel
+            </button>
+            <button type="button"
+                @click="
+                    if (!toId || !label || !reverseLabel) { alert('Please select an entity and fill in both labels.'); return; }
+                    htmx.ajax('POST', '{% url 'relationship_add' novel.pk %}', {
+                        target: '#relationships-section',
+                        swap: 'outerHTML',
+                        values: {
+                            from_type: '{{ entity_type }}',
+                            from_id: '{{ entity.pk }}',
+                            to_type: toType,
+                            to_id: toId,
+                            label: label,
+                            reverse_label: reverseLabel,
+                            notes: document.getElementById('rel-notes').value,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }
+                    });
+                    document.getElementById('add-relationship-form').classList.add('hidden');
+                "
+                class="text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded">
+                Add
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Character, CharacterRole, Location, LocationType, Item, ItemType
+from django.contrib.contenttypes.models import ContentType
+from django.http import JsonResponse
+from .models import Character, CharacterRole, Location, LocationType, Item, ItemType, Relationship, RelationshipType
 from .forms import CharacterForm, LocationForm, ItemForm
 from novels.models import Novel
 from django.contrib import messages
@@ -117,7 +119,15 @@ def modal_character_edit(request, novel_pk, pk):
             return render(request, 'planning/modal_character_list.html', {'novel': novel, 'characters': characters})
     else:
         form = CharacterForm(instance=character, novel=novel)
-    return render(request, 'planning/modal_character_form.html', {'novel': novel, 'form': form, 'character': character})
+    return render(request, 'planning/modal_character_form.html', {
+        'novel': novel, 'form': form, 'character': character,
+        'entity': character, 'entity_type': 'character',
+        'relationships': _get_relationships_for_entity(character),
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
 
 @login_required
 def modal_location_list(request, novel_pk):
@@ -158,7 +168,15 @@ def modal_location_edit(request, novel_pk, pk):
             return render(request, 'planning/modal_location_list.html', {'novel': novel, 'locations': locations})
     else:
         form = LocationForm(instance=location, novel=novel)
-    return render(request, 'planning/modal_location_form.html', {'novel': novel, 'form': form, 'location': location})
+    return render(request, 'planning/modal_location_form.html', {
+        'novel': novel, 'form': form, 'location': location,
+        'entity': location, 'entity_type': 'location',
+        'relationships': _get_relationships_for_entity(location),
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
 
 @login_required
 def modal_item_list(request, novel_pk):
@@ -199,7 +217,15 @@ def modal_item_edit(request, novel_pk, pk):
             return render(request, 'planning/modal_item_list.html', {'novel': novel, 'items': items})
     else:
         form = ItemForm(instance=item, novel=novel)
-    return render(request, 'planning/modal_item_form.html', {'novel': novel, 'form': form, 'item': item})
+    return render(request, 'planning/modal_item_form.html', {
+        'novel': novel, 'form': form, 'item': item,
+        'entity': item, 'entity_type': 'item',
+        'relationships': _get_relationships_for_entity(item),
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
 
 # ─── End Modal Views ─────────────────────────────────────────────────────────
 
@@ -323,3 +349,187 @@ def item_edit_view(request, novel_pk, pk):
         'item': item,
         'is_edit': True
     })
+
+
+# ─── Relationship Helpers ────────────────────────────────────────────────────
+
+def _get_entity(novel, entity_type, entity_id):
+    """Return the entity object and its ContentType for a given type string and id."""
+    model_map = {'character': Character, 'location': Location, 'item': Item}
+    model = model_map.get(entity_type)
+    if not model:
+        return None, None
+    obj = get_object_or_404(model, pk=entity_id, novel=novel)
+    ct = ContentType.objects.get_for_model(model)
+    return obj, ct
+
+
+# Map model classes to their type string
+_MODEL_TYPE_MAP = {
+    'character': 'character',
+    'location': 'location',
+    'item': 'item',
+}
+
+
+def _entity_type_str(obj):
+    """Return 'character', 'location', or 'item' for a given entity object."""
+    return obj.__class__.__name__.lower()
+
+
+def _get_relationships_for_entity(entity):
+    """Return all relationships involving this entity, annotated with direction and other_type."""
+    ct = ContentType.objects.get_for_model(entity)
+    forward = Relationship.objects.filter(from_content_type=ct, from_object_id=entity.pk)
+    reverse = Relationship.objects.filter(to_content_type=ct, to_object_id=entity.pk)
+    results = []
+    for r in forward:
+        other = r.to_entity
+        results.append({'rel': r, 'display_label': r.label, 'other': other,
+                        'other_type': _entity_type_str(other), 'direction': 'forward'})
+    for r in reverse:
+        other = r.from_entity
+        results.append({'rel': r, 'display_label': r.reverse_label, 'other': other,
+                        'other_type': _entity_type_str(other), 'direction': 'reverse'})
+    return results
+
+
+# ─── Relationship Views ──────────────────────────────────────────────────────
+
+@login_required
+def relationship_add(request, novel_pk):
+    """Add a relationship between two entities and its reverse."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    from_type = request.POST.get('from_type')
+    from_id = request.POST.get('from_id')
+    to_type = request.POST.get('to_type')
+    to_id = request.POST.get('to_id')
+    label = request.POST.get('label', '').strip()
+    reverse_label = request.POST.get('reverse_label', '').strip()
+    notes = request.POST.get('notes', '').strip()
+
+    from_obj, from_ct = _get_entity(novel, from_type, from_id)
+    to_obj, to_ct = _get_entity(novel, to_type, to_id)
+
+    if not from_obj or not to_obj or not label or not reverse_label:
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+
+    Relationship.objects.create(
+        novel=novel,
+        from_content_type=from_ct, from_object_id=from_obj.pk,
+        to_content_type=to_ct, to_object_id=to_obj.pk,
+        label=label, reverse_label=reverse_label, notes=notes
+    )
+
+    # Return updated relationships partial for the from_entity
+    relationships = _get_relationships_for_entity(from_obj)
+    return render(request, 'planning/modal_relationships.html', {
+        'novel': novel,
+        'entity': from_obj,
+        'entity_type': from_type,
+        'relationships': relationships,
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
+
+
+@login_required
+def relationship_edit(request, novel_pk, pk):
+    """Edit a relationship's labels and notes."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    rel = get_object_or_404(Relationship, pk=pk, novel=novel)
+
+    entity_type = request.POST.get('entity_type')
+    entity_id = request.POST.get('entity_id')
+    entity, _ = _get_entity(novel, entity_type, entity_id)
+
+    label = request.POST.get('label', '').strip()
+    reverse_label = request.POST.get('reverse_label', '').strip()
+    notes = request.POST.get('notes', '').strip()
+
+    if label and reverse_label:
+        rel.label = label
+        rel.reverse_label = reverse_label
+        rel.notes = notes
+        rel.save()
+
+    relationships = _get_relationships_for_entity(entity) if entity else []
+    return render(request, 'planning/modal_relationships.html', {
+        'novel': novel,
+        'entity': entity,
+        'entity_type': entity_type,
+        'relationships': relationships,
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
+
+
+@login_required
+def relationship_delete(request, novel_pk, pk):
+    """Delete a relationship."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    rel = get_object_or_404(Relationship, pk=pk, novel=novel)
+
+    # Determine the current entity from the request so we can re-render its list
+    entity_type = request.POST.get('entity_type')
+    entity_id = request.POST.get('entity_id')
+    entity, _ = _get_entity(novel, entity_type, entity_id)
+
+    rel.delete()
+
+    relationships = _get_relationships_for_entity(entity) if entity else []
+    return render(request, 'planning/modal_relationships.html', {
+        'novel': novel,
+        'entity': entity,
+        'entity_type': entity_type,
+        'relationships': relationships,
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+    })
+
+
+@login_required
+def relationship_type_list(request, novel_pk):
+    """Manage relationship types for a novel."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        forward = request.POST.get('forward_label', '').strip()
+        reverse = request.POST.get('reverse_label', '').strip()
+        if forward and reverse:
+            RelationshipType.objects.get_or_create(
+                novel=novel, forward_label=forward,
+                defaults={'reverse_label': reverse}
+            )
+    relationship_types = novel.relationship_types.all()
+    return render(request, 'planning/modal_relationship_types.html', {
+        'novel': novel,
+        'relationship_types': relationship_types,
+    })
+
+
+@login_required
+def entity_search(request, novel_pk):
+    """Search for entities to link in a relationship. Returns JSON."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    q = request.GET.get('q', '').strip()
+    entity_type = request.GET.get('type', '')
+    results = []
+    if entity_type == 'character':
+        qs = novel.characters.filter(archived=False, fullname__icontains=q)[:10]
+        results = [{'id': c.pk, 'name': c.fullname} for c in qs]
+    elif entity_type == 'location':
+        qs = novel.locations.filter(archived=False, name__icontains=q)[:10]
+        results = [{'id': l.pk, 'name': l.name} for l in qs]
+    elif entity_type == 'item':
+        qs = novel.items.filter(archived=False, name__icontains=q)[:10]
+        results = [{'id': i.pk, 'name': i.name} for i in qs]
+    return JsonResponse({'results': results})

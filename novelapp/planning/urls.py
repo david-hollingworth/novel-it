@@ -30,6 +30,13 @@ urlpatterns = [
     path('novel/<int:novel_pk>/locations/<int:pk>/edit/', views.location_edit_view, name='location_edit'),
     path('novel/<int:novel_pk>/locations/types/', views.location_type_list_view, name='location_type_list'),
     
+    # Relationships
+    path('novel/<int:novel_pk>/relationships/add/', views.relationship_add, name='relationship_add'),
+    path('novel/<int:novel_pk>/relationships/<int:pk>/edit/', views.relationship_edit, name='relationship_edit'),
+    path('novel/<int:novel_pk>/relationships/<int:pk>/delete/', views.relationship_delete, name='relationship_delete'),
+    path('novel/<int:novel_pk>/relationships/types/', views.relationship_type_list, name='relationship_type_list'),
+    path('novel/<int:novel_pk>/entities/search/', views.entity_search, name='entity_search'),
+
     # Items
     path('novel/<int:novel_pk>/items/', views.item_list_view, name='item_list'),
     path('novel/<int:novel_pk>/items/create/', views.item_create_view, name='item_create'),

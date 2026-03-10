@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from novels.models import Novel
 
 
@@ -199,3 +201,57 @@ class Item(models.Model):
     def get_novel_title(self):
         """Return the title of the novel this item belongs to."""
         return self.novel.title
+
+
+class RelationshipType(models.Model):
+    """
+    User-definable relationship types with forward and reverse labels.
+    e.g. forward: 'owns', reverse: 'owned by'
+    """
+    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='relationship_types')
+    forward_label = models.CharField(max_length=100, help_text="e.g. 'owns', 'lives in', 'enemy of'")
+    reverse_label = models.CharField(max_length=100, help_text="e.g. 'owned by', 'home of', 'enemy of'")
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'forward_label']
+        unique_together = ['novel', 'forward_label']
+
+    def __str__(self):
+        return f"{self.forward_label} / {self.reverse_label}"
+
+
+class Relationship(models.Model):
+    """
+    A generic relationship between any two planning entities
+    (Character, Location, or Item) within a novel.
+    """
+    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='relationships')
+
+    # From entity (generic FK)
+    from_content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, related_name='relationships_from'
+    )
+    from_object_id = models.PositiveIntegerField()
+    from_entity = GenericForeignKey('from_content_type', 'from_object_id')
+
+    # To entity (generic FK)
+    to_content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, related_name='relationships_to'
+    )
+    to_object_id = models.PositiveIntegerField()
+    to_entity = GenericForeignKey('to_content_type', 'to_object_id')
+
+    # Labels
+    label = models.CharField(max_length=100, help_text="Forward label e.g. 'owns'")
+    reverse_label = models.CharField(max_length=100, help_text="Reverse label e.g. 'owned by'")
+
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['label']
+
+    def __str__(self):
+        return f"{self.from_entity} {self.label} {self.to_entity}"
