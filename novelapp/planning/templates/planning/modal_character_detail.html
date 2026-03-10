@@ -1,0 +1,69 @@
+<!-- Modal: Character Detail -->
+<div class="space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div class="flex items-center gap-3">
+            <button type="button"
+                hx-get="{% url 'modal_character_list' novel.pk %}"
+                hx-target="#planning-modal-content"
+                class="text-slate-400 hover:text-indigo-600 cursor-pointer">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900">{{ character.fullname }}</h2>
+        </div>
+        <button type="button"
+            hx-get="{% url 'modal_character_edit' novel.pk character.pk %}"
+            hx-target="#planning-modal-content"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 cursor-pointer">
+            Edit
+        </button>
+    </div>
+
+    <div class="flex gap-6">
+        {% if character.image %}
+        <img src="{{ character.image.url }}" alt="{{ character.fullname }}"
+            class="w-28 h-28 rounded-full object-cover flex-shrink-0">
+        {% else %}
+        <div class="w-28 h-28 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+            <span class="text-indigo-600 font-bold text-4xl">{{ character.fullname|first }}</span>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm flex-1">
+            {% if character.role %}<div><span class="text-slate-400">Role</span><p class="font-medium text-slate-900">{{ character.role.name }}</p></div>{% endif %}
+            {% if character.gender %}<div><span class="text-slate-400">Gender</span><p class="font-medium text-slate-900">{{ character.gender }}</p></div>{% endif %}
+            {% if character.age %}<div><span class="text-slate-400">Age</span><p class="font-medium text-slate-900">{{ character.age }}</p></div>{% endif %}
+            {% if character.nickname %}<div><span class="text-slate-400">Nickname</span><p class="font-medium text-slate-900">{{ character.nickname }}</p></div>{% endif %}
+            {% if character.aliases %}<div><span class="text-slate-400">Aliases</span><p class="font-medium text-slate-900">{{ character.aliases }}</p></div>{% endif %}
+        </div>
+    </div>
+
+    {% if character.description %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Description</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ character.description }}</p>
+    </div>
+    {% endif %}
+
+    {% if character.personality %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Personality</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ character.personality }}</p>
+    </div>
+    {% endif %}
+
+    {% if character.relationships %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Relationships</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ character.relationships }}</p>
+    </div>
+    {% endif %}
+
+    {% if character.notes %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Notes</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ character.notes }}</p>
+    </div>
+    {% endif %}
+</div>

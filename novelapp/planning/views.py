@@ -76,6 +76,133 @@ def character_edit_view(request, novel_pk, pk):
     })
 
 # Role/Type Management Views
+# ─── Modal Views ────────────────────────────────────────────────────────────
+
+@login_required
+def modal_character_list(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    characters = novel.characters.filter(archived=False)
+    return render(request, 'planning/modal_character_list.html', {'novel': novel, 'characters': characters})
+
+@login_required
+def modal_character_detail(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    character = get_object_or_404(Character, pk=pk, novel=novel, archived=False)
+    return render(request, 'planning/modal_character_detail.html', {'novel': novel, 'character': character})
+
+@login_required
+def modal_character_create(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = CharacterForm(request.POST, request.FILES, novel=novel)
+        if form.is_valid():
+            character = form.save(commit=False)
+            character.novel = novel
+            character.save()
+            characters = novel.characters.filter(archived=False)
+            return render(request, 'planning/modal_character_list.html', {'novel': novel, 'characters': characters})
+    else:
+        form = CharacterForm(novel=novel)
+    return render(request, 'planning/modal_character_form.html', {'novel': novel, 'form': form})
+
+@login_required
+def modal_character_edit(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    character = get_object_or_404(Character, pk=pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = CharacterForm(request.POST, request.FILES, instance=character, novel=novel)
+        if form.is_valid():
+            form.save()
+            characters = novel.characters.filter(archived=False)
+            return render(request, 'planning/modal_character_list.html', {'novel': novel, 'characters': characters})
+    else:
+        form = CharacterForm(instance=character, novel=novel)
+    return render(request, 'planning/modal_character_form.html', {'novel': novel, 'form': form, 'character': character})
+
+@login_required
+def modal_location_list(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    locations = novel.locations.filter(archived=False)
+    return render(request, 'planning/modal_location_list.html', {'novel': novel, 'locations': locations})
+
+@login_required
+def modal_location_detail(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    location = get_object_or_404(Location, pk=pk, novel=novel, archived=False)
+    return render(request, 'planning/modal_location_detail.html', {'novel': novel, 'location': location})
+
+@login_required
+def modal_location_create(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = LocationForm(request.POST, request.FILES, novel=novel)
+        if form.is_valid():
+            location = form.save(commit=False)
+            location.novel = novel
+            location.save()
+            locations = novel.locations.filter(archived=False)
+            return render(request, 'planning/modal_location_list.html', {'novel': novel, 'locations': locations})
+    else:
+        form = LocationForm(novel=novel)
+    return render(request, 'planning/modal_location_form.html', {'novel': novel, 'form': form})
+
+@login_required
+def modal_location_edit(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    location = get_object_or_404(Location, pk=pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = LocationForm(request.POST, request.FILES, instance=location, novel=novel)
+        if form.is_valid():
+            form.save()
+            locations = novel.locations.filter(archived=False)
+            return render(request, 'planning/modal_location_list.html', {'novel': novel, 'locations': locations})
+    else:
+        form = LocationForm(instance=location, novel=novel)
+    return render(request, 'planning/modal_location_form.html', {'novel': novel, 'form': form, 'location': location})
+
+@login_required
+def modal_item_list(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    items = novel.items.filter(archived=False)
+    return render(request, 'planning/modal_item_list.html', {'novel': novel, 'items': items})
+
+@login_required
+def modal_item_detail(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(Item, pk=pk, novel=novel, archived=False)
+    return render(request, 'planning/modal_item_detail.html', {'novel': novel, 'item': item})
+
+@login_required
+def modal_item_create(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, novel=novel)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.novel = novel
+            item.save()
+            items = novel.items.filter(archived=False)
+            return render(request, 'planning/modal_item_list.html', {'novel': novel, 'items': items})
+    else:
+        form = ItemForm(novel=novel)
+    return render(request, 'planning/modal_item_form.html', {'novel': novel, 'form': form})
+
+@login_required
+def modal_item_edit(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(Item, pk=pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item, novel=novel)
+        if form.is_valid():
+            form.save()
+            items = novel.items.filter(archived=False)
+            return render(request, 'planning/modal_item_list.html', {'novel': novel, 'items': items})
+    else:
+        form = ItemForm(instance=item, novel=novel)
+    return render(request, 'planning/modal_item_form.html', {'novel': novel, 'form': form, 'item': item})
+
+# ─── End Modal Views ─────────────────────────────────────────────────────────
+
 @login_required
 def character_role_list_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)

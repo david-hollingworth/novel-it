@@ -1,0 +1,45 @@
+<!-- Modal: Item List -->
+<div class="space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-bold text-slate-900">Items</h2>
+        <button type="button"
+            hx-get="{% url 'modal_item_create' novel.pk %}"
+            hx-target="#planning-modal-content"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 cursor-pointer">
+            + Add Item
+        </button>
+    </div>
+
+    {% if items %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {% for item in items %}
+        <button type="button"
+            hx-get="{% url 'modal_item_edit' novel.pk item.pk %}"
+            hx-target="#planning-modal-content"
+            class="text-left bg-white rounded-lg border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer">
+            {% if item.image %}
+            <img src="{{ item.image.url }}" alt="{{ item.name }}"
+                class="w-full h-24 object-cover rounded-md mb-3">
+            {% else %}
+            <div class="w-full h-24 rounded-md bg-amber-50 flex items-center justify-center mb-3">
+                <svg class="h-8 w-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            </div>
+            {% endif %}
+            <h3 class="text-sm font-bold text-slate-900 truncate">{{ item.name }}</h3>
+            {% if item.type %}
+            <p class="text-xs text-amber-600 mt-0.5">{{ item.type.name }}</p>
+            {% endif %}
+        </button>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-slate-400">
+        <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <p class="text-sm">No items yet.</p>
+    </div>
+    {% endif %}
+</div>

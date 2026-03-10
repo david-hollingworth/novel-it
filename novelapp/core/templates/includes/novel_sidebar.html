@@ -1,0 +1,70 @@
+{% comment %}
+  Navigation sidebar include.
+  Required context variables: novel (the novel object)
+  Optional: active_nav — one of "characters", "locations", "items"
+{% endcomment %}
+<div class="hidden lg:flex lg:flex-col w-10 flex-shrink-0">
+    <nav class="flex flex-col gap-1">
+
+        <button type="button"
+            hx-get="{% url 'modal_character_list' novel.pk %}"
+            hx-target="#planning-modal-content"
+            hx-on::after-request="document.getElementById('planning-modal').classList.remove('hidden')"
+            class="group relative flex items-center justify-center h-28 w-10 rounded-l-lg border border-r-0 text-xs font-semibold uppercase tracking-widest transition-all duration-150
+            {% if active_nav == 'characters' %}
+                bg-indigo-600 text-white border-indigo-600 shadow-md
+            {% else %}
+                bg-white text-slate-500 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200
+            {% endif %} cursor-pointer">
+            <span class="rotate-[-90deg] whitespace-nowrap">Characters</span>
+        </button>
+
+        <button type="button"
+            hx-get="{% url 'modal_location_list' novel.pk %}"
+            hx-target="#planning-modal-content"
+            hx-on::after-request="document.getElementById('planning-modal').classList.remove('hidden')"
+            class="group relative flex items-center justify-center h-28 w-10 rounded-l-lg border border-r-0 text-xs font-semibold uppercase tracking-widest transition-all duration-150
+            {% if active_nav == 'locations' %}
+                bg-indigo-600 text-white border-indigo-600 shadow-md
+            {% else %}
+                bg-white text-slate-500 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200
+            {% endif %} cursor-pointer">
+            <span class="rotate-[-90deg] whitespace-nowrap">Locations</span>
+        </button>
+
+        <button type="button"
+            hx-get="{% url 'modal_item_list' novel.pk %}"
+            hx-target="#planning-modal-content"
+            hx-on::after-request="document.getElementById('planning-modal').classList.remove('hidden')"
+            class="group relative flex items-center justify-center h-28 w-10 rounded-l-lg border border-r-0 text-xs font-semibold uppercase tracking-widest transition-all duration-150
+            {% if active_nav == 'items' %}
+                bg-indigo-600 text-white border-indigo-600 shadow-md
+            {% else %}
+                bg-white text-slate-500 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200
+            {% endif %} cursor-pointer">
+            <span class="rotate-[-90deg] whitespace-nowrap">Items</span>
+        </button>
+
+    </nav>
+</div>
+
+<!-- Planning Modal -->
+<div id="planning-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+         onclick="document.getElementById('planning-modal').classList.add('hidden')"></div>
+    <!-- Panel -->
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
+        <!-- Close button -->
+        <button onclick="document.getElementById('planning-modal').classList.add('hidden')"
+            class="absolute top-4 right-4 z-10 text-slate-400 hover:text-slate-600">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <!-- Content (swapped by HTMX) -->
+        <div id="planning-modal-content" class="overflow-y-auto flex-1 p-6">
+            <!-- Loaded via HTMX -->
+        </div>
+    </div>
+</div>

@@ -110,11 +110,118 @@ def scene_create_view(request, novel_pk, chapter_pk):
 @login_required
 def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
     scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    active_scenes = list(scene.chapter.scenes.filter(archived=False).order_by('order'))
+    current_index = next((i for i, s in enumerate(active_scenes) if s.pk == scene.pk), None)
+    prev_scene = active_scenes[current_index - 1] if current_index and current_index > 0 else None
+    next_scene = active_scenes[current_index + 1] if current_index is not None and current_index < len(active_scenes) - 1 else None
     return render(request, 'novels/scene_editor.html', {
         'novel': scene.chapter.novel,
         'chapter': scene.chapter,
-        'scene': scene
+        'scene': scene,
+        'prev_scene': prev_scene,
+        'next_scene': next_scene,
     })
+
+@login_required
+def scene_edit_view(request, novel_pk, chapter_pk, scene_pk):
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    if request.method == 'POST':
+        form = SceneForm(request.POST, instance=scene)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Scene '{scene.title}' updated successfully.")
+            return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
+    else:
+        form = SceneForm(instance=scene)
+    return render(request, 'novels/scene_form.html', {
+        'form': form,
+        'novel': scene.chapter.novel,
+        'chapter': scene.chapter,
+        'scene': scene,
+    })
+
+
+@login_required
+def scene_archive_view(request, novel_pk, chapter_pk, scene_pk):
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    if request.method == 'POST':
+        scene.archived = True
+        scene.save()
+        messages.success(request, f"Scene '{scene.title}' archived successfully.")
+        return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
+    return render(request, 'novels/scene_confirm_archive.html', {
+        'scene': scene,
+        'novel': scene.chapter.novel,
+        'chapter': scene.chapter,
+    })
+
+
+@login_required
+def scene_restore_view(request, novel_pk, chapter_pk, scene_pk):
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=True)
+    if request.method == 'POST':
+        scene.archived = False
+        scene.save()
+        messages.success(request, f"Scene '{scene.title}' restored successfully.")
+        return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
+    return render(request, 'novels/scene_confirm_restore.html', {
+        'scene': scene,
+        'novel': scene.chapter.novel,
+        'chapter': scene.chapter,
+    })
+
+
+@login_required
+def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user)
+    if request.method == 'POST':
+        title = scene.title
+        scene.delete()
+        messages.success(request, f"Scene '{title}' deleted permanently.")
+        return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
+    return render(request, 'novels/scene_confirm_delete.html', {
+        'scene': scene,
+        'novel': scene.chapter.novel,
+        'chapter': scene.chapter,
+    })
+
+
+@login_required
+def archived_scene_list_view(request, novel_pk, chapter_pk):
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    scenes = chapter.scenes.filter(archived=True)
+    return render(request, 'novels/archived_scene_list.html', {
+        'novel': chapter.novel,
+        'chapter': chapter,
+        'scenes': scenes,
+    })
+
+
+@login_required
+def scene_reorder_view(request, novel_pk, chapter_pk):
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    if request.method == 'POST':
+        try:
+            from django.db import transaction
+            data = json.loads(request.body)
+            scene_ids = data.get('scene_ids', [])
+            active_pks = set(chapter.scenes.filter(archived=False).values_list('pk', flat=True))
+            valid_ids = [int(sid) for sid in scene_ids if int(sid) in active_pks]
+            if valid_ids:
+                with transaction.atomic():
+                    # Step 1: Move to unique negative temp values to avoid unique_together conflicts
+                    for index, sid in enumerate(valid_ids):
+                        chapter.scenes.filter(pk=sid).update(order=-(index + 1))
+                    # Step 2: Assign final positive orders
+                    for index, sid in enumerate(valid_ids):
+                        chapter.scenes.filter(pk=sid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
+
 
 @login_required
 def novel_archive_view(request, pk):
@@ -162,6 +269,37 @@ def chapter_archive_view(request, novel_pk, chapter_pk):
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
         return redirect('novel_detail', pk=novel_pk)
+
+
+@login_required
+def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
+    """
+    API endpoint to save scene content from the editor.
+    Accepts POST with JSON body: {"content": "..."}
+    Returns JSON: {"status": "success", "word_count": N} or error.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    scene = get_object_or_404(
+        Scene,
+        pk=scene_pk,
+        chapter__pk=chapter_pk,
+        chapter__novel__pk=novel_pk,
+        chapter__novel__user=request.user,
+        archived=False
+    )
+
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '')
+        scene.content = content
+        scene.save()  # triggers word count recalculation via Scene.save()
+        return JsonResponse({'status': 'success', 'word_count': scene.word_count})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return render(request, 'novels/chapter_confirm_archive.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
@@ -216,3 +354,34 @@ def chapter_reorder_view(request, novel_pk):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
     return redirect('novel_detail', pk=novel_pk)
+
+
+@login_required
+def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
+    """
+    API endpoint to save scene content from the editor.
+    Accepts POST with JSON body: {"content": "..."}
+    Returns JSON: {"status": "success", "word_count": N} or error.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    scene = get_object_or_404(
+        Scene,
+        pk=scene_pk,
+        chapter__pk=chapter_pk,
+        chapter__novel__pk=novel_pk,
+        chapter__novel__user=request.user,
+        archived=False
+    )
+
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '')
+        scene.content = content
+        scene.save()  # triggers word count recalculation via Scene.save()
+        return JsonResponse({'status': 'success', 'word_count': scene.word_count})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

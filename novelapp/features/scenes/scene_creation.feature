@@ -39,10 +39,12 @@ Feature: Scene Creation
   @ordering
   Scenario: New scenes are added at the end
     Given "Chapter 1" has scenes:
+      | title   |
       | Scene 1 |
       | Scene 2 |
     When I create a new scene titled "Scene 3"
     Then the scene order should be:
+      | title   |
       | Scene 1 |
       | Scene 2 |
       | Scene 3 |
@@ -51,9 +53,10 @@ Feature: Scene Creation
   Scenario: Create multiple scenes quickly
     Given I am viewing "Chapter 1"
     When I create scenes with titles:
-      | Opening     |
-      | Rising      |
-      | Climax      |
-      | Resolution  |
+      | title      |
+      | Opening    |
+      | Rising     |
+      | Climax     |
+      | Resolution |
     Then all 4 scenes should be created
     And they should appear in the correct order

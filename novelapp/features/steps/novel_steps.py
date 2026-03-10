@@ -452,23 +452,35 @@ def see_in_list(context, title):
         assert title in body
 
 @when('I click the "Restore" button next to "{title}"')
-def click_restore_chapter(context, title):
-    from novels.models import Chapter
+def click_restore_entity(context, title):
+    from novels.models import Chapter, Scene
+    # Try scene first (if we have a current chapter context)
+    scene = Scene.objects.filter(
+        title=title,
+        chapter__novel__user__username=context.current_user,
+    ).first()
+    if scene:
+        context.current_scene = scene
+        url = reverse('scene_restore', kwargs={
+            'novel_pk': scene.chapter.novel.pk,
+            'chapter_pk': scene.chapter.pk,
+            'scene_pk': scene.pk,
+        })
+        if context.use_client:
+            context.response = context.test.client.get(url)
+            context.current_path = url
+        else:
+            context.browser.get(context.base_url + url)
+        return
+
+    # Fall back to chapter restore
     chapter = Chapter.objects.get(title=title, novel=context.current_novel)
     context.current_chapter = chapter
-    
     if context.use_client:
         url = reverse('chapter_restore', kwargs={'novel_pk': context.current_novel.pk, 'chapter_pk': chapter.pk})
-        context.response = context.test.client.post(url, follow=True) # Assuming restore is POST or leads to confirm
-        # If view requires GET then POST:
-        # context.response = context.test.client.get(url)
-        # But our view implementation for restore returns a confirm page on GET.
-        # So steps should be: navigate to restore -> confirm.
-        # This step implies the action.
-        # Let's act as if we clicked it. If it's a link to a confirm page:
-        context.response = context.test.client.get(url)
+        context.response = context.test.client.post(url, follow=True)
+        context.current_path = url
     else:
-        # Find link and click
         pass
 
 @then('the chapter should be restored to active status')

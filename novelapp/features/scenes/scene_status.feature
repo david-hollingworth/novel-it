@@ -27,10 +27,13 @@ Feature: Scene Status Management
   @workflow
   Scenario: Track progress through writing workflow
     Given the scene status is "Not Started"
-    When I change the status to "In Progress"
+    When I navigate to the scene's page
+    And I change the status to "In Progress"
     And I save the changes
+    When I navigate to the scene's page
     And I write some content
     And I change the status to "First Draft"
+    And I save the changes
     Then the status progression should be recorded
 
   @visual
@@ -43,8 +46,9 @@ Feature: Scene Status Management
   @filter
   Scenario: Filter scenes by status
     Given I have multiple scenes with different statuses:
-      | Scene 1 | In Progress  |
-      | Scene 2 | Complete     |
-      | Scene 3 | Not Started  |
+      | title   | status      |
+      | Scene 1 | In Progress |
+      | Scene 2 | Complete    |
+      | Scene 3 | Not Started |
     When I filter by status "In Progress"
     Then I should only see "Scene 1"

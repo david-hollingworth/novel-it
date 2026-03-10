@@ -1,0 +1,110 @@
+{% load static %}
+{% comment %}
+Reusable markdown editor partial.
+
+Required variables:
+    editor_id       — unique id for the textarea element (e.g. "scene-editor")
+    editor_content  — initial markdown content
+
+Optional variables:
+    editor_placeholder  — placeholder text (default: "Start writing…")
+    editor_save_url     — URL to POST content to (enables Ctrl+S and save())
+    editor_csrf         — CSRF token (required when editor_save_url is set)
+    editor_word_count_id  — id of element to update with live word count
+    editor_save_status_id — id of element to show save status
+    editor_save_btn_id    — id of save button to disable during save
+
+Example usage:
+    {% include "includes/markdown_editor.html" with
+        editor_id="scene-editor"
+        editor_content=scene.content
+        editor_save_url=save_url
+        editor_csrf=csrf_token
+        editor_word_count_id="word-count"
+        editor_save_status_id="save-status"
+        editor_save_btn_id="save-btn"
+    %}
+{% endcomment %}
+
+<!-- EasyMDE assets (safe to include multiple times — browser caches after first load) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script src="{% static 'js/editor.js' %}"></script>
+
+<style>
+    .EasyMDEContainer .CodeMirror {
+        font-family: 'Courier Prime', monospace !important;
+        font-size: 1.125rem;
+        line-height: 1.85;
+        color: #1e293b;
+        min-height: 500px;
+        padding: 1.5rem 2rem;
+        border: none;
+        border-top: 1px solid #e2e8f0;
+    }
+    .EasyMDEContainer .CodeMirror-scroll {
+        min-height: 500px;
+    }
+    .editor-toolbar {
+        border: none;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 0.5rem 1rem;
+        opacity: 1;
+    }
+    .editor-toolbar button {
+        color: #64748b !important;
+    }
+    .editor-toolbar button:hover,
+    .editor-toolbar button.active {
+        background: #e0e7ff !important;
+        border-color: #c7d2fe !important;
+        color: #4f46e5 !important;
+    }
+    .editor-toolbar i.separator { border-color: #e2e8f0; }
+    .EasyMDEContainer { border: none; }
+    .editor-statusbar {
+        padding: 0.4rem 2rem;
+        color: #94a3b8;
+        font-family: 'Courier Prime', monospace;
+        font-size: 0.75rem;
+        border-top: 1px solid #e2e8f0;
+    }
+</style>
+
+<textarea id="{{ editor_id }}">{{ editor_content|default:"" }}</textarea>
+
+<script>
+(function () {
+    // Wait for DOM + EasyMDE to be ready
+    document.addEventListener('DOMContentLoaded', function () {
+        const editor = initEditor({
+            elementId:    '{{ editor_id }}',
+            placeholder:  '{{ editor_placeholder|default:"Start writing…" }}',
+            {% if editor_save_url %}
+            saveUrl:      '{{ editor_save_url }}',
+            csrfToken:    '{{ editor_csrf }}',
+            {% endif %}
+            {% if editor_word_count_id %}
+            wordCountId:  '{{ editor_word_count_id }}',
+            {% endif %}
+            {% if editor_save_status_id %}
+            saveStatusId: '{{ editor_save_status_id }}',
+            {% endif %}
+            {% if editor_save_btn_id %}
+            saveBtnId:    '{{ editor_save_btn_id }}',
+            {% endif %}
+        });
+
+        // Expose save() globally so external buttons can call it
+        // e.g. onclick="editors['{{ editor_id }}'].save()"
+        window.editors = window.editors || {};
+        window.editors['{{ editor_id }}'] = editor;
+
+        // Legacy: keep window.saveContent() working for the scene editor's Save Now button
+        {% if editor_save_url %}
+        window.saveContent = function () { editor.save(); };
+        {% endif %}
+    });
+}());
+</script>

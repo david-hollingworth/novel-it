@@ -2,9 +2,43 @@
 
 {% block title %}{{ chapter.title }} - {{ novel.title }}{% endblock %}
 
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var el = document.getElementById('scene-list');
+        if (el) {
+            var sortable = Sortable.create(el, {
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                onEnd: function (evt) {
+                    var order = sortable.toArray();
+                    fetch("{% url 'scene_reorder' novel.pk chapter.pk %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ scene_ids: order })
+                    }).then(response => {
+                        if (!response.ok) console.error('Reorder failed');
+                    });
+                    var items = el.children;
+                    for (var i = 0; i < items.length; i++) {
+                        var span = items[i].querySelector('span.tracking-wide');
+                        if (span) span.textContent = 'Scene ' + (i + 1);
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
 {% block content %}
-<div class="space-y-8">
-    <!-- Header -->
+<div class="space-y-6">
+
+    <!-- Header: full width -->
     <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
         <div class="flex justify-between items-start mb-4">
             <div>
@@ -19,21 +53,19 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
-                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit
-                    Chapter</a>
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit Chapter</a>
                 <a href="{% url 'chapter_archive' novel.pk chapter.pk %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archive</a>
                 <a href="{% url 'chapter_delete' novel.pk chapter.pk %}"
                     class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
                 <a href="{% url 'scene_create' novel.pk chapter.pk %}"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add
-                    Scene</a>
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add Scene</a>
             </div>
         </div>
         <p class="text-slate-600 max-w-3xl user-content">{{ chapter.summary|default:"No summary provided." }}</p>
         <div class="mt-6 flex space-x-6 text-sm">
             <div class="flex items-center text-slate-500">
-                <span class="font-bold text-slate-900 mr-2">{{ chapter.word_count }}</span> Words in Chapter
+                <span class="font-bold text-slate-900 mr-2">{{ chapter.word_count }}</span> Words
             </div>
             <div class="flex items-center text-slate-500">
                 <span class="font-bold text-slate-900 mr-2">{{ scenes.count }}</span> Scenes
@@ -41,37 +73,62 @@
         </div>
     </div>
 
-    <!-- Scenes List -->
-    <div class="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
-        <ul class="divide-y divide-slate-200">
-            {% for scene in scenes %}
-            <li>
-                <a href="{% url 'scene_editor' novel.pk chapter.pk scene.pk %}"
-                    class="px-6 py-4 flex items-center justify-between hover:bg-slate-50">
-                    <div class="flex items-center">
-                        <span class="text-slate-400 font-medium mr-4 w-6">{{ scene.order }}</span>
-                        <div>
-                            <h4 class="text-sm font-bold text-slate-900 user-content">{{ scene.title }}</h4>
-                            <p class="text-xs text-slate-500">
-                                {{ scene.word_count }} words &middot; Updated {{ scene.updated_at|timesince }} ago
-                            </p>
+    <!-- Sidebar + Scene Cards: flex row -->
+    <div class="flex gap-6 items-start">
+
+        {% include "includes/novel_sidebar.html" with novel=novel active_nav="" %}
+
+        <!-- Scene Cards -->
+        <div class="flex-1 min-w-0">
+            {% if scenes %}
+            <div id="scene-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {% for scene in scenes %}
+                <div data-id="{{ scene.pk }}"
+                    class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-move">
+                    <div class="p-4">
+                        <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                            Scene {{ scene.order }}
+                        </span>
+                        <h3 class="text-sm font-bold text-slate-900 mt-1 mb-1 truncate">
+                            <a href="{% url 'scene_editor' novel.pk chapter.pk scene.pk %}" class="hover:text-indigo-600">
+                                {{ scene.title }}</a>
+                        </h3>
+                        <p class="text-slate-500 text-xs mb-3">{{ scene.get_status_display }}</p>
+                        <div class="pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                            <span>{{ scene.word_count }} words</span>
+                            <span>{{ scene.updated_at|timesince }} ago</span>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <a href="{% url 'scene_editor' novel.pk chapter.pk scene.pk %}"
+                                class="flex-1 text-center px-2 py-1 text-xs font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200">Write</a>
+                            <a href="{% url 'scene_edit' novel.pk chapter.pk scene.pk %}"
+                                class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Markdown</span>
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-slate-300">
+                <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-slate-900">No scenes yet</h3>
+                <p class="mt-1 text-sm text-slate-500">Get started by adding a new scene.</p>
+                <div class="mt-6">
+                    <a href="{% url 'scene_create' novel.pk chapter.pk %}"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
-                    </div>
-                </a>
-            </li>
-            {% empty %}
-            <li class="px-6 py-12 text-center text-slate-500">
-                No scenes created yet.
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
+                        Add Scene
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div><!-- end scene cards panel -->
+    </div><!-- end flex row -->
+</div><!-- end page -->
 {% endblock %}

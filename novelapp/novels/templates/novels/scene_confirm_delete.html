@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-red-600 mb-4">Delete Scene?</h2>
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <p class="text-red-700 font-medium">Warning: This action is permanent!</p>
+            <p class="text-red-600 mt-1">
+                Are you sure you want to permanently delete the scene <strong>"{{ scene.title }}"</strong>?
+                All content will be lost. This cannot be undone.
+            </p>
+        </div>
+
+        <form method="post" class="flex items-center space-x-4">
+            {% csrf_token %}
+            <button type="submit"
+                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                Yes, Delete Scene
+            </button>
+            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}"
+                class="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

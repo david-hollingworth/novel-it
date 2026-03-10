@@ -48,7 +48,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<!-- Novel Details: full width -->
+<div class="space-y-6">
     <!-- Header -->
     <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
         <div class="flex justify-between items-start mb-4">
@@ -90,71 +91,45 @@
         </div>
     </div>
 
-    <!-- Content Sections (Tabs Placeholder) -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- Sidebar Navigation -->
-        <div class="lg:col-span-1 space-y-4">
-            <nav class="space-y-1">
-                <a href="{% url 'novel_detail' novel.pk %}"
-                    class="bg-indigo-50 text-indigo-700 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-                    Chapters & Scenes
-                </a>
-                <a href="{% url 'character_list' novel.pk %}"
-                    class="text-slate-600 hover:bg-slate-50 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-                    Characters
-                </a>
-                <a href="{% url 'location_list' novel.pk %}"
-                    class="text-slate-600 hover:bg-slate-50 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-                    Locations
-                </a>
-                <a href="{% url 'item_list' novel.pk %}"
-                    class="text-slate-600 hover:bg-slate-50 hover:text-slate-900 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-                    Items
-                </a>
-            </nav>
-        </div>
+    <!-- Bottom section: sidebar left, cards right, sharing the same top edge -->
+    <div class="flex gap-6 items-start">
 
-        <!-- Main Content Area -->
-        <div class="lg:col-span-3">
-            {% if chapters %}
-            <div id="chapter-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {% for chapter in chapters %}
-                <div data-id="{{ chapter.pk }}"
-                    class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-move">
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
-                                Chapter {{ chapter.order }}
-                            </span>
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-900 mb-2 truncate">
-                            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" class="hover:text-indigo-600">
-                                {{ chapter.title }}</a>
-                        </h3>
-                        {% if chapter.summary %}
-                        <p class="text-slate-600 text-sm mb-4 line-clamp-3">
-                            {{ chapter.summary }}
-                        </p>
-                        {% else %}
-                        <p class="text-slate-400 text-sm mb-4 italic">No summary available.</p>
-                        {% endif %}
+        {% include "includes/novel_sidebar.html" with novel=novel active_nav="" %}
 
-                        <div
-                            class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                            <span>{{ chapter.word_count }} words</span>
-                            <span>{{ chapter.get_scene_count }} scenes</span>
-                        </div>
-
-                        <div class="mt-4 flex space-x-2">
-                            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}"
-                                class="flex-1 text-center px-3 py-2 text-sm font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200">View</a>
-                            <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
-                                class="px-3 py-2 text-sm font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
-                        </div>
+        <!-- Chapter Cards: takes all remaining width -->
+        <div class="flex-1 min-w-0">
+        {% if chapters %}
+        <div id="chapter-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {% for chapter in chapters %}
+            <div data-id="{{ chapter.pk }}"
+                class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-move">
+                <div class="p-4">
+                    <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
+                        Chapter {{ chapter.order }}
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900 mt-1 mb-1 truncate">
+                        <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" class="hover:text-indigo-600">
+                            {{ chapter.title }}</a>
+                    </h3>
+                    {% if chapter.summary %}
+                    <p class="text-slate-600 text-xs mb-3 line-clamp-2">{{ chapter.summary }}</p>
+                    {% else %}
+                    <p class="text-slate-400 text-xs mb-3 italic">No summary available.</p>
+                    {% endif %}
+                    <div class="pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                        <span>{{ chapter.word_count }} words</span>
+                        <span>{{ chapter.get_scene_count }} scenes</span>
+                    </div>
+                    <div class="mt-3 flex space-x-2">
+                        <a href="{% url 'chapter_detail' novel.pk chapter.pk %}"
+                            class="flex-1 text-center px-2 py-1 text-xs font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200">View</a>
+                        <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
+                            class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
                     </div>
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
+        </div>
             {% else %}
             <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-slate-300">
                 <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,8 +153,9 @@
                     </a>
                 </div>
             </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+    {% endif %}
+
+        </div><!-- end chapter cards panel -->
+    </div><!-- end flex row -->
+</div><!-- end page -->
 {% endblock %}

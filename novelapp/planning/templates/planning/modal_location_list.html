@@ -1,0 +1,46 @@
+<!-- Modal: Location List -->
+<div class="space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-bold text-slate-900">Locations</h2>
+        <button type="button"
+            hx-get="{% url 'modal_location_create' novel.pk %}"
+            hx-target="#planning-modal-content"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 cursor-pointer">
+            + Add Location
+        </button>
+    </div>
+
+    {% if locations %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {% for location in locations %}
+        <button type="button"
+            hx-get="{% url 'modal_location_edit' novel.pk location.pk %}"
+            hx-target="#planning-modal-content"
+            class="text-left bg-white rounded-lg border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer">
+            {% if location.image %}
+            <img src="{{ location.image.url }}" alt="{{ location.name }}"
+                class="w-full h-24 object-cover rounded-md mb-3">
+            {% else %}
+            <div class="w-full h-24 rounded-md bg-emerald-50 flex items-center justify-center mb-3">
+                <svg class="h-8 w-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </div>
+            {% endif %}
+            <h3 class="text-sm font-bold text-slate-900 truncate">{{ location.name }}</h3>
+            {% if location.type %}
+            <p class="text-xs text-emerald-600 mt-0.5">{{ location.type.name }}</p>
+            {% endif %}
+        </button>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-slate-400">
+        <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        </svg>
+        <p class="text-sm">No locations yet.</p>
+    </div>
+    {% endif %}
+</div>

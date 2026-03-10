@@ -1,0 +1,44 @@
+<!-- Modal: Item Detail -->
+<div class="space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div class="flex items-center gap-3">
+            <button type="button"
+                hx-get="{% url 'modal_item_list' novel.pk %}"
+                hx-target="#planning-modal-content"
+                class="text-slate-400 hover:text-indigo-600 cursor-pointer">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </button>
+            <h2 class="text-xl font-bold text-slate-900">{{ item.name }}</h2>
+        </div>
+        <button type="button"
+            hx-get="{% url 'modal_item_edit' novel.pk item.pk %}"
+            hx-target="#planning-modal-content"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 cursor-pointer">
+            Edit
+        </button>
+    </div>
+
+    {% if item.image %}
+    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover rounded-lg">
+    {% endif %}
+
+    <div class="grid grid-cols-2 gap-4 text-sm">
+        {% if item.type %}<div><span class="text-slate-400">Type</span><p class="font-medium text-slate-900">{{ item.type.name }}</p></div>{% endif %}
+    </div>
+
+    {% if item.description %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Description</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ item.description }}</p>
+    </div>
+    {% endif %}
+
+    {% if item.notes %}
+    <div>
+        <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Notes</h3>
+        <p class="text-sm text-slate-700 whitespace-pre-line">{{ item.notes }}</p>
+    </div>
+    {% endif %}
+</div>

@@ -88,9 +88,26 @@ class Scene(models.Model):
     """
     A scene belongs to a chapter and contains the actual writing content.
     """
+    STATUS_NOT_STARTED = 'not_started'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_FIRST_DRAFT = 'first_draft'
+    STATUS_NEEDS_REVIEW = 'needs_review'
+    STATUS_FINAL_DRAFT = 'final_draft'
+    STATUS_COMPLETE = 'complete'
+
+    STATUS_CHOICES = [
+        (STATUS_NOT_STARTED, 'Not Started'),
+        (STATUS_IN_PROGRESS, 'In Progress'),
+        (STATUS_FIRST_DRAFT, 'First Draft'),
+        (STATUS_NEEDS_REVIEW, 'Needs Review'),
+        (STATUS_FINAL_DRAFT, 'Final Draft'),
+        (STATUS_COMPLETE, 'Complete'),
+    ]
+
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='scenes')
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=0, help_text="Display order within the chapter")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_NOT_STARTED)
     content = models.TextField(blank=True, help_text="Markdown content of the scene")
     notes = models.TextField(blank=True, help_text="Scene notes or summary")
     word_count = models.IntegerField(default=0, help_text="Word count of content")

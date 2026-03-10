@@ -29,9 +29,24 @@ class ChapterForm(forms.ModelForm):
 class SceneForm(forms.ModelForm):
     class Meta:
         model = Scene
-        fields = ['title', 'content', 'order']
+        fields = ['title', 'notes', 'status']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
-            'content': forms.Textarea(attrs={'rows': 5, 'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
-            'order': forms.NumberInput(attrs={'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
+            'status': forms.Select(attrs={'class': 'mt-1 block w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'}),
         }
+        error_messages = {
+            'title': {
+                'required': 'Title is required',
+            },
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].required = False
+
+    def clean_status(self):
+        status = self.cleaned_data.get('status')
+        if not status:
+            return Scene.STATUS_NOT_STARTED
+        return status

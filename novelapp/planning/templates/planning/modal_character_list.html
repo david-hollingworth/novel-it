@@ -1,0 +1,47 @@
+<!-- Modal: Character List -->
+<div class="space-y-4">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-bold text-slate-900">Characters</h2>
+        <a href="{% url 'character_create' novel.pk %}"
+            hx-get="{% url 'modal_character_create' novel.pk %}"
+            hx-target="#planning-modal-content"
+            hx-push-url="false"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+            + Add Character
+        </a>
+    </div>
+
+    {% if characters %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {% for character in characters %}
+        <button type="button"
+            hx-get="{% url 'modal_character_edit' novel.pk character.pk %}"
+            hx-target="#planning-modal-content"
+            class="text-left bg-white rounded-lg border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer">
+            {% if character.image %}
+            <img src="{{ character.image.url }}" alt="{{ character.fullname }}"
+                class="w-16 h-16 rounded-full object-cover mb-3 mx-auto">
+            {% else %}
+            <div class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3 mx-auto">
+                <span class="text-indigo-600 font-bold text-xl">{{ character.fullname|first }}</span>
+            </div>
+            {% endif %}
+            <h3 class="text-sm font-bold text-slate-900 text-center truncate">{{ character.fullname }}</h3>
+            {% if character.role %}
+            <p class="text-xs text-indigo-600 text-center mt-0.5">{{ character.role.name }}</p>
+            {% endif %}
+            {% if character.age %}
+            <p class="text-xs text-slate-400 text-center mt-0.5">Age {{ character.age }}</p>
+            {% endif %}
+        </button>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-slate-400">
+        <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <p class="text-sm">No characters yet.</p>
+    </div>
+    {% endif %}
+</div>

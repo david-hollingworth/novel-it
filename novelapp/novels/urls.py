@@ -20,4 +20,11 @@ urlpatterns = [
     path('<int:novel_pk>/chapters/reorder/', views.chapter_reorder_view, name='chapter_reorder'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/create/', views.scene_create_view, name='scene_create'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/editor/', views.scene_editor_view, name='scene_editor'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/edit/', views.scene_edit_view, name='scene_edit'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/archive/', views.scene_archive_view, name='scene_archive'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/restore/', views.scene_restore_view, name='scene_restore'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/delete/', views.scene_delete_view, name='scene_delete'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scenes/archived/', views.archived_scene_list_view, name='archived_scene_list'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scenes/reorder/', views.scene_reorder_view, name='scene_reorder'),
+    path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/save/', views.scene_save_view, name='scene_save'),
 ]
