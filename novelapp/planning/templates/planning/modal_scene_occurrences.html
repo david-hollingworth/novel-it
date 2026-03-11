@@ -1,0 +1,21 @@
+<div class="space-y-3">
+    <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide">Appears In</h3>
+    {% if scene_occurrences %}
+    <div class="space-y-1.5">
+        {% for se in scene_occurrences %}
+        <div class="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 font-medium">{{ se.scene.chapter.title }}</span>
+                <span class="text-slate-300">›</span>
+                <span class="text-slate-700">{{ se.scene.title }}</span>
+            </div>
+            <span class="text-xs text-slate-400 tabular-nums">
+                {{ se.mention_count }} mention{{ se.mention_count|pluralize }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-xs text-slate-400 italic">Not yet detected in any scenes.</p>
+    {% endif %}
+</div>

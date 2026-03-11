@@ -295,6 +295,15 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
         content = data.get('content', '')
         scene.content = content
         scene.save()  # triggers word count recalculation via Scene.save()
+
+        # Scan for entity mentions and update SceneEntity records
+        from planning.scan import scan_scene_entities
+        try:
+            scan_scene_entities(scene)
+        except Exception as scan_err:
+            import logging
+            logging.getLogger(__name__).error('scan_scene_entities failed: %s', scan_err, exc_info=True)
+
         return JsonResponse({'status': 'success', 'word_count': scene.word_count})
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
@@ -356,32 +365,4 @@ def chapter_reorder_view(request, novel_pk):
     return redirect('novel_detail', pk=novel_pk)
 
 
-@login_required
-def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
-    """
-    API endpoint to save scene content from the editor.
-    Accepts POST with JSON body: {"content": "..."}
-    Returns JSON: {"status": "success", "word_count": N} or error.
-    """
-    if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
-    scene = get_object_or_404(
-        Scene,
-        pk=scene_pk,
-        chapter__pk=chapter_pk,
-        chapter__novel__pk=novel_pk,
-        chapter__novel__user=request.user,
-        archived=False
-    )
-
-    try:
-        data = json.loads(request.body)
-        content = data.get('content', '')
-        scene.content = content
-        scene.save()  # triggers word count recalculation via Scene.save()
-        return JsonResponse({'status': 'success', 'word_count': scene.word_count})
-    except json.JSONDecodeError:
-        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

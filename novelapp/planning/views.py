@@ -90,7 +90,12 @@ def modal_character_list(request, novel_pk):
 def modal_character_detail(request, novel_pk, pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     character = get_object_or_404(Character, pk=pk, novel=novel, archived=False)
-    return render(request, 'planning/modal_character_detail.html', {'novel': novel, 'character': character})
+    return render(request, 'planning/modal_character_detail.html', {
+        'novel': novel,
+        'character': character,
+        'relationships': _get_relationships_for_entity(character),
+        'scene_occurrences': _get_scene_occurrences(character),
+    })
 
 @login_required
 def modal_character_create(request, novel_pk):
@@ -127,6 +132,7 @@ def modal_character_edit(request, novel_pk, pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'scene_occurrences': _get_scene_occurrences(character) if character else [],
     })
 
 @login_required
@@ -139,7 +145,12 @@ def modal_location_list(request, novel_pk):
 def modal_location_detail(request, novel_pk, pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     location = get_object_or_404(Location, pk=pk, novel=novel, archived=False)
-    return render(request, 'planning/modal_location_detail.html', {'novel': novel, 'location': location})
+    return render(request, 'planning/modal_location_detail.html', {
+        'novel': novel,
+        'location': location,
+        'relationships': _get_relationships_for_entity(location),
+        'scene_occurrences': _get_scene_occurrences(location),
+    })
 
 @login_required
 def modal_location_create(request, novel_pk):
@@ -176,6 +187,7 @@ def modal_location_edit(request, novel_pk, pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'scene_occurrences': _get_scene_occurrences(location) if location else [],
     })
 
 @login_required
@@ -188,7 +200,12 @@ def modal_item_list(request, novel_pk):
 def modal_item_detail(request, novel_pk, pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     item = get_object_or_404(Item, pk=pk, novel=novel, archived=False)
-    return render(request, 'planning/modal_item_detail.html', {'novel': novel, 'item': item})
+    return render(request, 'planning/modal_item_detail.html', {
+        'novel': novel,
+        'item': item,
+        'relationships': _get_relationships_for_entity(item),
+        'scene_occurrences': _get_scene_occurrences(item),
+    })
 
 @login_required
 def modal_item_create(request, novel_pk):
@@ -225,6 +242,7 @@ def modal_item_edit(request, novel_pk, pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'scene_occurrences': _get_scene_occurrences(item) if item else [],
     })
 
 # ─── End Modal Views ─────────────────────────────────────────────────────────
@@ -349,6 +367,20 @@ def item_edit_view(request, novel_pk, pk):
         'item': item,
         'is_edit': True
     })
+
+
+# ─── Scene Occurrence Helper ────────────────────────────────────────────────
+
+def _get_scene_occurrences(entity):
+    """Return SceneEntity records for this entity, with scene info, ordered by chapter/scene."""
+    from .models import SceneEntity
+    ct = ContentType.objects.get_for_model(entity)
+    return (
+        SceneEntity.objects
+        .filter(content_type=ct, object_id=entity.pk)
+        .select_related('scene', 'scene__chapter')
+        .order_by('scene__chapter__order', 'scene__order')
+    )
 
 
 # ─── Relationship Helpers ────────────────────────────────────────────────────

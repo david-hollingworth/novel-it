@@ -255,3 +255,28 @@ class Relationship(models.Model):
 
     def __str__(self):
         return f"{self.from_entity} {self.label} {self.to_entity}"
+
+
+class SceneEntity(models.Model):
+    """
+    Records that a planning entity (Character, Location, or Item) was
+    detected in a scene's content. Populated automatically on scene save
+    by scanning the text for known names and aliases.
+    """
+    scene = models.ForeignKey(
+        'novels.Scene', on_delete=models.CASCADE, related_name='scene_entities'
+    )
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, related_name='scene_occurrences'
+    )
+    object_id = models.PositiveIntegerField()
+    entity = GenericForeignKey('content_type', 'object_id')
+    mention_count = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['scene', 'content_type', 'object_id']
+        ordering = ['content_type', 'object_id']
+
+    def __str__(self):
+        return f"{self.entity} in {self.scene} ({self.mention_count}x)"

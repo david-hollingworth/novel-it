@@ -66,4 +66,10 @@
         <p class="text-sm text-slate-700 whitespace-pre-line">{{ character.notes }}</p>
     </div>
     {% endif %}
+
+    {% if scene_occurrences %}
+    <div class="border-t border-slate-100 pt-4">
+        {% include "planning/modal_scene_occurrences.html" %}
+    </div>
+    {% endif %}
 </div>
