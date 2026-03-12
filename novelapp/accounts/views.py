@@ -4,8 +4,10 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
+from django.views.decorators.clickjacking import xframe_options_deny
 from .forms import UserRegistrationForm
 
+@xframe_options_deny
 def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -18,6 +20,7 @@ def register_view(request):
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
 
+@xframe_options_deny
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -45,6 +48,7 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
+@xframe_options_deny
 def password_change_view(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)

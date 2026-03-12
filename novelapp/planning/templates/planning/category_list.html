@@ -3,13 +3,17 @@
 {% block title %}Manage {{ title }} - {{ novel.title }}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-8">
+<div class="max-w-2xl mx-auto space-y-8" x-data="{ editingId: null, editingName: '' }">
     <div class="flex items-center justify-between">
         <div>
             <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
-                <a href="{% url back_url novel.pk %}" class="hover:text-indigo-600">Back</a>
+                <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
                 <span class="mx-2">/</span>
-                <span class="text-slate-900 font-medium">{{ title }}</span>
+                <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                <span class="mx-2">/</span>
+                <a href="{% url back_url novel.pk %}" class="hover:text-indigo-600">{{ title }}</a>
+                <span class="mx-2">/</span>
+                <span class="text-slate-900 font-medium">Manage Types</span>
             </nav>
             <h1 class="text-3xl font-bold text-slate-900">{{ title }}</h1>
         </div>
@@ -20,8 +24,9 @@
         <h2 class="text-lg font-bold text-slate-900 mb-4">Add New</h2>
         <form method="POST" class="flex space-x-3">
             {% csrf_token %}
-            <input type="text" name="name" placeholder="Name" required
-                class="block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            <input type="hidden" name="action" value="add">
+            <input type="text" name="name" placeholder="Type name" required
+                class="block w-full rounded-md border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             <button type="submit"
                 class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 whitespace-nowrap">Add</button>
         </form>
@@ -31,13 +36,41 @@
     <div class="bg-white shadow overflow-hidden sm:rounded-md border border-slate-200">
         <ul class="divide-y divide-slate-200">
             {% for category in categories %}
-            <li class="px-6 py-4 flex items-center justify-between">
-                <span class="text-slate-900 font-medium user-content">{{ category.name }}</span>
-                <span class="text-xs text-slate-400">ID: {{ category.pk }}</span>
+            <li class="px-6 py-4">
+                <!-- View mode -->
+                <div x-show="editingId !== {{ category.pk }}" class="flex items-center justify-between">
+                    <span class="text-slate-900 font-medium">{{ category.name }}</span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button"
+                            @click="editingId = {{ category.pk }}; editingName = '{{ category.name|escapejs }}'"
+                            class="px-3 py-1 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50">Rename</button>
+                        <form method="POST" onsubmit="return confirm('Delete \'{{ category.name|escapejs }}\'? This cannot be undone.')">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="category_id" value="{{ category.pk }}">
+                            <button type="submit"
+                                class="px-3 py-1 text-xs font-medium text-red-600 bg-white border border-red-200 rounded hover:bg-red-50">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Edit mode -->
+                <div x-show="editingId === {{ category.pk }}" x-cloak>
+                    <form method="POST" class="flex space-x-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="rename">
+                        <input type="hidden" name="category_id" value="{{ category.pk }}">
+                        <input type="text" name="name" x-model="editingName" required
+                            class="block w-full rounded-md border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <button type="submit"
+                            class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 whitespace-nowrap">Save</button>
+                        <button type="button" @click="editingId = null"
+                            class="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50">Cancel</button>
+                    </form>
+                </div>
             </li>
             {% empty %}
             <li class="px-6 py-8 text-center text-slate-500">
-                No items defined yet.
+                No types defined yet. Add one above.
             </li>
             {% endfor %}
         </ul>

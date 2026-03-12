@@ -248,18 +248,145 @@ def modal_item_edit(request, novel_pk, pk):
 # ─── End Modal Views ─────────────────────────────────────────────────────────
 
 @login_required
+def modal_manage_location_types(request, novel_pk):
+    """HTMX fragment for managing location types inline within the location edit modal."""
+    from django.urls import reverse
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                LocationType.objects.get_or_create(novel=novel, name=name)
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                lt = get_object_or_404(LocationType, pk=cat_id, novel=novel)
+                lt.name = name
+                lt.save()
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                lt = get_object_or_404(LocationType, pk=cat_id, novel=novel)
+                lt.delete()
+    types = novel.location_types.all()
+    return render(request, 'planning/modal_manage_types.html', {
+        'novel': novel,
+        'types': types,
+        'manage_url': reverse('modal_manage_location_types', args=[novel_pk]),
+        'field_id': 'id_type',
+    })
+
+
+@login_required
+def modal_manage_item_types(request, novel_pk):
+    """HTMX fragment for managing item types inline within the item edit modal."""
+    from django.urls import reverse
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                ItemType.objects.get_or_create(novel=novel, name=name)
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                it = get_object_or_404(ItemType, pk=cat_id, novel=novel)
+                it.name = name
+                it.save()
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                it = get_object_or_404(ItemType, pk=cat_id, novel=novel)
+                it.delete()
+    types = novel.item_types.all()
+    return render(request, 'planning/modal_manage_types.html', {
+        'novel': novel,
+        'types': types,
+        'manage_url': reverse('modal_manage_item_types', args=[novel_pk]),
+        'field_id': 'id_type',
+    })
+
+
+@login_required
+def modal_manage_character_roles(request, novel_pk):
+    """HTMX fragment for managing character roles inline within the character edit modal."""
+    from django.urls import reverse
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                CharacterRole.objects.get_or_create(novel=novel, name=name)
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                role = get_object_or_404(CharacterRole, pk=cat_id, novel=novel)
+                role.name = name
+                role.save()
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                role = get_object_or_404(CharacterRole, pk=cat_id, novel=novel)
+                role.delete()
+    roles = novel.character_roles.all()
+    return render(request, 'planning/modal_manage_types.html', {
+        'novel': novel,
+        'types': roles,
+        'manage_url': reverse('modal_manage_character_roles', args=[novel_pk]),
+        'field_id': 'id_role',
+    })
+
+
+@login_required
+def modal_type_options(request, novel_pk, type_model):
+    """Returns a fresh <select> options fragment after type changes, for refreshing the form select."""
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if type_model == 'location':
+        options = novel.location_types.all()
+    elif type_model == 'item':
+        options = novel.item_types.all()
+    elif type_model == 'character':
+        options = novel.character_roles.all()
+    else:
+        options = []
+    return render(request, 'planning/modal_type_options.html', {'options': options})
+
+
+@login_required
 def character_role_list_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     roles = novel.character_roles.all()
     if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            CharacterRole.objects.create(novel=novel, name=name)
-            messages.success(request, f"Role '{name}' added.")
-            return redirect('character_role_list', novel_pk=novel.pk)
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                CharacterRole.objects.get_or_create(novel=novel, name=name)
+                messages.success(request, f"Role '{name}' added.")
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                role = get_object_or_404(CharacterRole, pk=cat_id, novel=novel)
+                role.name = name
+                role.save()
+                messages.success(request, f"Role renamed to '{name}'.")
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                role = get_object_or_404(CharacterRole, pk=cat_id, novel=novel)
+                role.delete()
+                messages.success(request, "Role deleted.")
+        return redirect('character_role_list', novel_pk=novel.pk)
     return render(request, 'planning/category_list.html', {
-        'novel': novel, 
-        'categories': roles, 
+        'novel': novel,
+        'categories': roles,
         'title': 'Character Roles',
         'back_url': 'character_list'
     })
@@ -269,14 +396,30 @@ def location_type_list_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     types = novel.location_types.all()
     if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            LocationType.objects.create(novel=novel, name=name)
-            messages.success(request, f"Type '{name}' added.")
-            return redirect('location_type_list', novel_pk=novel.pk)
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                LocationType.objects.get_or_create(novel=novel, name=name)
+                messages.success(request, f"Type '{name}' added.")
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                lt = get_object_or_404(LocationType, pk=cat_id, novel=novel)
+                lt.name = name
+                lt.save()
+                messages.success(request, f"Type renamed to '{name}'.")
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                lt = get_object_or_404(LocationType, pk=cat_id, novel=novel)
+                lt.delete()
+                messages.success(request, "Type deleted.")
+        return redirect('location_type_list', novel_pk=novel.pk)
     return render(request, 'planning/category_list.html', {
-        'novel': novel, 
-        'categories': types, 
+        'novel': novel,
+        'categories': types,
         'title': 'Location Types',
         'back_url': 'location_list'
     })
@@ -286,14 +429,30 @@ def item_type_list_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
     types = novel.item_types.all()
     if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            ItemType.objects.create(novel=novel, name=name)
-            messages.success(request, f"Type '{name}' added.")
-            return redirect('item_type_list', novel_pk=novel.pk)
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                ItemType.objects.get_or_create(novel=novel, name=name)
+                messages.success(request, f"Type '{name}' added.")
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                it = get_object_or_404(ItemType, pk=cat_id, novel=novel)
+                it.name = name
+                it.save()
+                messages.success(request, f"Type renamed to '{name}'.")
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                it = get_object_or_404(ItemType, pk=cat_id, novel=novel)
+                it.delete()
+                messages.success(request, "Type deleted.")
+        return redirect('item_type_list', novel_pk=novel.pk)
     return render(request, 'planning/category_list.html', {
-        'novel': novel, 
-        'categories': types, 
+        'novel': novel,
+        'categories': types,
         'title': 'Item Types',
         'back_url': 'item_list'
     })

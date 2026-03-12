@@ -32,6 +32,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://192.168.1.28:6080',
+    'https://zbook15.tailc4d6d7.ts.net:6443',
+]
+
 
 # Application definition
 
@@ -58,7 +63,11 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # XFrameOptionsMiddleware removed from global middleware.
+    # Clickjacking protection is applied selectively via @xframe_options_deny
+    # on sensitive views (login, password change) in accounts/views.py.
+    # This allows browser extensions such as ProWritingAid to function on
+    # editor and content pages on both private and public deployments.
 ]
 
 ROOT_URLCONF = 'novelapp.urls'

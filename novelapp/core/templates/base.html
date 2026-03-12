@@ -109,6 +109,57 @@
         </div>
     </footer>
     {% block extra_scripts %}{% endblock %}
+
+    <script>
+    // Global event delegation for type manager buttons injected by HTMX
+    document.addEventListener('click', function(e) {
+        // Open type manager panel
+        const openBtn = e.target.closest('.js-manage-types');
+        if (openBtn) {
+            e.preventDefault();
+            const manageUrl = openBtn.dataset.manageUrl;
+            const optionsUrl = openBtn.dataset.optionsUrl;
+            const fieldId = openBtn.dataset.fieldId;
+            const container = document.getElementById('type-manager-container');
+            if (!container) return;
+            container.classList.remove('hidden');
+            container.dataset.optionsUrl = optionsUrl;
+            container.dataset.fieldId = fieldId;
+            htmx.ajax('GET', manageUrl, { target: '#type-manager-container', swap: 'innerHTML' });
+            return;
+        }
+
+        // Close type manager panel
+        const closeBtn = e.target.closest('.js-close-type-manager');
+        if (closeBtn) {
+            e.preventDefault();
+            const container = document.getElementById('type-manager-container');
+            if (!container) return;
+            // Refresh the select options before closing
+            const optionsUrl = container.dataset.optionsUrl;
+            const fieldId = container.dataset.fieldId;
+            if (optionsUrl && fieldId) {
+                htmx.ajax('GET', optionsUrl, { target: '#' + fieldId, swap: 'innerHTML' });
+            }
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+    });
+
+    // Also refresh select after any HTMX swap inside the type manager
+    document.addEventListener('htmx:afterSwap', function(e) {
+        const container = document.getElementById('type-manager-container');
+        if (!container || container.classList.contains('hidden')) return;
+        if (e.target && e.target.id === 'type-manager-panel') {
+            const optionsUrl = container.dataset.optionsUrl;
+            const fieldId = container.dataset.fieldId;
+            if (optionsUrl && fieldId) {
+                htmx.ajax('GET', optionsUrl, { target: '#' + fieldId, swap: 'innerHTML' });
+            }
+        }
+    });
+    </script>
 </body>
 
 </html>

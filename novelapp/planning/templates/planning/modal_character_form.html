@@ -29,6 +29,23 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {% for field in form %}
+            {% if field.html_name == 'role' %}
+            <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700">{{ field.label }}</label>
+                    <button type="button"
+                        data-manage-url="{% url 'modal_manage_character_roles' novel.pk %}"
+                        data-options-url="{% url 'modal_type_options' novel.pk 'character' %}"
+                        data-field-id="id_role"
+                        class="text-xs text-indigo-600 hover:text-indigo-800 font-medium js-manage-types">Manage Roles</button>
+                </div>
+                {{ field }}
+                {% for error in field.errors %}<p class="text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="md:col-span-2">
+                <div id="type-manager-container" class="hidden"></div>
+            </div>
+            {% else %}
             <div class="space-y-1 {% if field.field.widget.attrs.rows %}md:col-span-2{% endif %}">
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700">
                     {{ field.label }}
@@ -41,6 +58,7 @@
                 <p class="text-xs text-red-600">{{ error }}</p>
                 {% endfor %}
             </div>
+            {% endif %}
             {% endfor %}
         </div>
 
@@ -67,3 +85,5 @@
     </div>
     {% endif %}
 </div>
+
+

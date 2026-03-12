@@ -1,0 +1,69 @@
+<!-- Inline Type Manager Panel -->
+<div id="type-manager-panel" x-data="{ editingId: null, editingName: '' }" class="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+    <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-slate-700">Manage Types</h3>
+        <button type="button" class="text-slate-400 hover:text-slate-600 js-close-type-manager">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Add new type -->
+    <form hx-post="{{ manage_url }}"
+          hx-target="#type-manager-panel"
+          hx-swap="outerHTML"
+          class="flex gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <input type="text" name="name" placeholder="New type name" required
+            class="block w-full rounded border-slate-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+        <button type="submit"
+            class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 whitespace-nowrap">Add</button>
+    </form>
+
+    <!-- Existing types list -->
+    <ul class="divide-y divide-slate-200 bg-white rounded border border-slate-200 max-h-48 overflow-y-auto">
+        {% for t in types %}
+        <li class="px-3 py-2">
+            <div x-show="editingId !== {{ t.pk }}" class="flex items-center justify-between">
+                <span class="text-sm text-slate-800">{{ t.name }}</span>
+                <div class="flex gap-1">
+                    <button type="button"
+                        @click="editingId = {{ t.pk }}; editingName = '{{ t.name|escapejs }}'"
+                        class="px-2 py-0.5 text-xs text-slate-500 border border-slate-200 rounded hover:bg-slate-50">Rename</button>
+                    <form hx-post="{{ manage_url }}"
+                          hx-target="#type-manager-panel"
+                          hx-swap="outerHTML"
+                          onsubmit="return confirm('Delete \'{{ t.name|escapejs }}\'?')"
+                          class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="category_id" value="{{ t.pk }}">
+                        <button type="submit"
+                            class="px-2 py-0.5 text-xs text-red-500 border border-red-200 rounded hover:bg-red-50">Delete</button>
+                    </form>
+                </div>
+            </div>
+            <div x-show="editingId === {{ t.pk }}" x-cloak>
+                <form hx-post="{{ manage_url }}"
+                      hx-target="#type-manager-panel"
+                      hx-swap="outerHTML"
+                      class="flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="rename">
+                    <input type="hidden" name="category_id" value="{{ t.pk }}">
+                    <input type="text" name="name" x-model="editingName" required
+                        class="block w-full rounded border-slate-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <button type="submit"
+                        class="px-2 py-1 text-xs text-white bg-indigo-600 rounded hover:bg-indigo-700 whitespace-nowrap">Save</button>
+                    <button type="button" @click="editingId = null"
+                        class="px-2 py-1 text-xs text-slate-600 border border-slate-300 rounded hover:bg-slate-50">Cancel</button>
+                </form>
+            </div>
+        </li>
+        {% empty %}
+        <li class="px-3 py-4 text-center text-xs text-slate-400">No types yet. Add one above.</li>
+        {% endfor %}
+    </ul>
+</div>

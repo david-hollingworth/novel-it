@@ -7,7 +7,10 @@
             <div class="flex items-center gap-2">
                 <span class="text-xs text-slate-400 font-medium">{{ se.scene.chapter.title }}</span>
                 <span class="text-slate-300">›</span>
-                <span class="text-slate-700">{{ se.scene.title }}</span>
+                <a href="{% url 'scene_editor' novel.pk se.scene.chapter.pk se.scene.pk %}"
+                   class="text-indigo-600 hover:text-indigo-800 hover:underline font-medium">
+                    {{ se.scene.title }}
+                </a>
             </div>
             <span class="text-xs text-slate-400 tabular-nums">
                 {{ se.mention_count }} mention{{ se.mention_count|pluralize }}

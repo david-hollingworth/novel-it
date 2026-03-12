@@ -30,6 +30,12 @@ urlpatterns = [
     path('novel/<int:novel_pk>/locations/<int:pk>/edit/', views.location_edit_view, name='location_edit'),
     path('novel/<int:novel_pk>/locations/types/', views.location_type_list_view, name='location_type_list'),
     
+    # Inline type management (HTMX fragments)
+    path('novel/<int:novel_pk>/modal/manage/location-types/', views.modal_manage_location_types, name='modal_manage_location_types'),
+    path('novel/<int:novel_pk>/modal/manage/item-types/', views.modal_manage_item_types, name='modal_manage_item_types'),
+    path('novel/<int:novel_pk>/modal/manage/character-roles/', views.modal_manage_character_roles, name='modal_manage_character_roles'),
+    path('novel/<int:novel_pk>/modal/type-options/<str:type_model>/', views.modal_type_options, name='modal_type_options'),
+
     # Relationships
     path('novel/<int:novel_pk>/relationships/add/', views.relationship_add, name='relationship_add'),
     path('novel/<int:novel_pk>/relationships/<int:pk>/edit/', views.relationship_edit, name='relationship_edit'),

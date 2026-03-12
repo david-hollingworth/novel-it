@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.db import transaction
+from django.db.models import Max, F
 import json
 from .models import Novel, Chapter, Scene
 from .forms import NovelForm, ChapterForm, SceneForm
@@ -269,6 +271,83 @@ def chapter_archive_view(request, novel_pk, chapter_pk):
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
         return redirect('novel_detail', pk=novel_pk)
+
+
+@login_required
+def scene_move_view(request, novel_pk, scene_pk):
+    """
+    Move a scene from one chapter to another within the same novel.
+    Accepts POST with JSON body: {"target_chapter_id": N}
+    - Preserves all scene metadata (R-FUNC-00311)
+    - Recalculates word counts on both source and destination chapters (R-FUNC-00312)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+
+    scene = get_object_or_404(
+        Scene,
+        pk=scene_pk,
+        chapter__novel__pk=novel_pk,
+        chapter__novel__user=request.user,
+        archived=False
+    )
+
+    try:
+        data = json.loads(request.body)
+        target_chapter_id = int(data['target_chapter_id'])
+        target_chapter = get_object_or_404(
+            Chapter, pk=target_chapter_id, novel__pk=novel_pk, archived=False
+        )
+
+        # No-op if dropped back onto the same chapter
+        if target_chapter.pk == scene.chapter.pk:
+            return JsonResponse({'status': 'success'})
+
+        with transaction.atomic():
+            source_chapter = scene.chapter
+            old_order = scene.order
+
+            # Append to end of destination chapter
+            max_order = target_chapter.scenes.filter(archived=False).aggregate(
+                Max('order'))['order__max'] or 0
+
+            # Use update_fields to bypass Scene.save() cascade — we trigger
+            # word count recalculation manually on both chapters below
+            scene.chapter = target_chapter
+            scene.order = max_order + 1
+            scene.save(update_fields=['chapter', 'order'])
+
+            # Close the gap left in the source chapter
+            # (avoids sparse order values and keeps unique_together clean)
+            source_chapter.scenes.filter(
+                archived=False, order__gt=old_order
+            ).update(order=F('order') - 1)
+
+            # Recalculate word counts on both chapters (each also updates novel)
+            source_chapter.update_word_count()
+            target_chapter.update_word_count()
+
+        # Refresh from DB to get accurate post-move counts
+        source_chapter.refresh_from_db()
+        target_chapter.refresh_from_db()
+
+        return JsonResponse({
+            'status': 'success',
+            'scene_id': scene.pk,
+            'source_chapter_id': source_chapter.pk,
+            'source_word_count': source_chapter.word_count,
+            'source_scene_count': source_chapter.scenes.filter(archived=False).count(),
+            'target_chapter_id': target_chapter.pk,
+            'target_word_count': target_chapter.word_count,
+            'target_scene_count': target_chapter.scenes.filter(archived=False).count(),
+        })
+
+    except (KeyError, ValueError, TypeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @login_required

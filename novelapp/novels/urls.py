@@ -27,4 +27,5 @@ urlpatterns = [
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scenes/archived/', views.archived_scene_list_view, name='archived_scene_list'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scenes/reorder/', views.scene_reorder_view, name='scene_reorder'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/scene/<int:scene_pk>/save/', views.scene_save_view, name='scene_save'),
+    path('<int:novel_pk>/scene/<int:scene_pk>/move/', views.scene_move_view, name='scene_move'),
 ]
