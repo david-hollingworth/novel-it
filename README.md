@@ -7,6 +7,11 @@ novel-it is free, open-source software. It exists as an alternative to
 commercial web-based writing tools — you own your data, you run your own
 instance, and no one is monetising your writing.
 
+## Screenshots
+
+![Novel overview](screenshots/novel-overview.png)
+![Editor](screenshots/editor.png)
+
 ## Features
 
 **Writing**
