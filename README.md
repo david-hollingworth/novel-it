@@ -90,7 +90,7 @@ For a production deployment behind a reverse proxy (Caddy, Nginx, etc.):
 3. Run with Gunicorn: `gunicorn novelapp.wsgi:application`
 4. Serve `staticfiles/` and `media/` directories via your reverse proxy
 
-Full installation guide: [docs/installation.md](docs/installation.md) *(coming soon)*
+Full installation guide: [docs/novel-it-installation-guide.md](docs/novel-it-installation-guide.md)
 
 ## Running Tests
 
