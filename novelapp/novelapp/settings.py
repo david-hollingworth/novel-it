@@ -141,6 +141,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# WhiteNoise: always read from disk in development so static file changes
+# are picked up immediately without needing to restart Gunicorn workers.
+WHITENOISE_AUTOREFRESH = True
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
