@@ -233,6 +233,7 @@ function initEditor(options = {}) {
     // -----------------------------------------------------------------------
     let isPreviewing  = false;
     let isFullscreen  = false;
+    let isDirty       = false;   // true whenever there are unsaved changes
 
     // -----------------------------------------------------------------------
     // Formatting helpers
@@ -340,6 +341,7 @@ function initEditor(options = {}) {
             saveStatusEl.textContent = 'Unsaved changes';
             saveStatusEl.className   = 'text-xs text-amber-500 italic';
         }
+        isDirty = true;
     }
 
     textarea.addEventListener('input', triggerChange);
@@ -377,6 +379,7 @@ function initEditor(options = {}) {
                     saveStatusEl.textContent = 'Saved';
                     saveStatusEl.className   = 'text-xs text-green-500 italic';
                 }
+                isDirty = false;
             } else {
                 if (saveStatusEl) {
                     saveStatusEl.textContent = 'Save failed';
@@ -397,6 +400,27 @@ function initEditor(options = {}) {
             }
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Autosave — every 30 seconds, but only when there are unsaved changes
+    // -----------------------------------------------------------------------
+    if (saveUrl && csrfToken) {
+        setInterval(() => {
+            if (isDirty) save();
+        }, 30000);
+    }
+
+    // -----------------------------------------------------------------------
+    // Navigation guard — warn before leaving with unsaved changes
+    // -----------------------------------------------------------------------
+    window.addEventListener('beforeunload', (e) => {
+        if (isDirty) {
+            // Modern browsers show their own generic message; setting
+            // returnValue is required to trigger the dialog at all.
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
 
     // -----------------------------------------------------------------------
     // Public API
