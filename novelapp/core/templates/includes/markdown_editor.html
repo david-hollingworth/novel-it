@@ -164,8 +164,11 @@ Example usage:
     .ni-preview-area h2 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; }
     .ni-preview-area h3 { font-size: 1.25rem;font-weight: 700; margin: 1rem 0 0.5rem; }
     .ni-preview-area p  { margin: 0 0 0.75rem; }
-    .ni-preview-area ul,
-    .ni-preview-area ol { margin: 0 0 0.75rem 1.5rem; }
+    .ni-preview-area ul { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style-type: revert; }
+    .ni-preview-area ol { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style-type: revert; }
+    .ni-preview-area li { margin-bottom: 0.25rem; }
+    .ni-preview-area li > ul,
+    .ni-preview-area li > ol { margin-top: 0.25rem; margin-bottom: 0; }
     .ni-preview-area blockquote {
         border-left: 3px solid #c7d2fe;
         margin: 0 0 0.75rem;
