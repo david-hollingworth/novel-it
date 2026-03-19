@@ -74,7 +74,7 @@ This needs to be done once per installation:
 # Run The Server
 You're now ready to run the application for the first time:
 
-`gunicorn --bind 0.0.0.0:8000 novelapp.wsgi`
+`gunicorn novelapp.wsgi`
 
 Note, if you've configured a port other than 8000 in DJANGO_CSRF_TRUSTED_ORIGINS then use that port number in the command above.
 
