@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ novel.title }} - Novel It{% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="{% static 'js/sortable.min.js' %}"></script>
 <script>
     const CSRF_TOKEN = '{{ csrf_token }}';
     const NOVEL_PK = {{ novel.pk }};
