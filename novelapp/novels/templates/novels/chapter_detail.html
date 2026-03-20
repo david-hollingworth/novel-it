@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ chapter.title }} - {{ novel.title }}{% endblock %}
 
 {% block extra_scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="{% static 'js/sortable.min.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var el = document.getElementById('scene-list');
