@@ -5,8 +5,64 @@ from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Max, F
 import json
-from .models import Novel, Chapter, Scene
-from .forms import NovelForm, ChapterForm, SceneForm
+from .models import Novel, Part, Chapter, Scene
+from .forms import NovelForm, PartForm, ChapterForm, SceneForm
+
+@login_required
+def part_detail_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+    chapters = part.chapters.filter(archived=False)
+    return render(request, 'novels/part_detail.html', {
+        'novel': novel,
+        'part': part,
+        'chapters': chapters,
+    })
+
+
+@login_required
+def part_edit_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = PartForm(request.POST, instance=part)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Part '{part.title}' updated successfully.")
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=part.pk)
+    else:
+        form = PartForm(instance=part)
+    return render(request, 'novels/part_form.html', {
+        'form': form,
+        'novel': novel,
+        'part': part,
+        'title': 'Edit Part',
+    })
+
+
+@login_required
+def part_create_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = PartForm(request.POST)
+        if form.is_valid():
+            part = form.save(commit=False)
+            part.novel = novel
+            # Place after the last non-default part
+            last_order = novel.parts.filter(archived=False).exclude(title='_default').aggregate(
+                Max('order'))['order__max'] or 0
+            part.order = last_order + 1
+            part.save()
+            messages.success(request, f"Part '{part.title}' created.")
+            return redirect('novel_detail', pk=novel.pk)
+    else:
+        form = PartForm()
+    return render(request, 'novels/part_form.html', {
+        'form': form,
+        'novel': novel,
+        'title': 'Add Part',
+    })
+
 
 @login_required
 def novel_list_view(request):
@@ -30,10 +86,10 @@ def novel_create_view(request):
 @login_required
 def novel_detail_view(request, pk):
     novel = get_object_or_404(Novel, pk=pk, user=request.user, archived=False)
-    chapters = novel.chapters.filter(archived=False)
+    parts = novel.parts.filter(archived=False)
     return render(request, 'novels/novel_detail.html', {
         'novel': novel,
-        'chapters': chapters
+        'parts': parts,
     })
 
 @login_required
@@ -66,14 +122,23 @@ def novel_delete_view(request, pk):
 @login_required
 def chapter_create_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    # Chapters are always parented off a Part. When parts are not enabled the
+    # novel has a single transparent Part — get or create it.
+    part, _ = Part.objects.get_or_create(
+        novel=novel,
+        order=1,
+        defaults={'title': '_default'},
+    )
     if request.method == 'POST':
         form = ChapterForm(request.POST)
         if form.is_valid():
             chapter = form.save(commit=False)
-            chapter.novel = novel
-            chapter.order = novel.get_chapter_count() + 1
+            chapter.part = part
+            chapter.order = part.get_chapter_count() + 1
             chapter.save()
             messages.success(request, f"Chapter '{chapter.title}' created.")
+            if novel.parts_enabled:
+                return redirect('part_detail', novel_pk=novel.pk, part_pk=part.pk)
             return redirect('novel_detail', pk=novel.pk)
     else:
         form = ChapterForm()
@@ -81,7 +146,7 @@ def chapter_create_view(request, novel_pk):
 
 @login_required
 def chapter_detail_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     scenes = chapter.scenes.filter(archived=False)
     return render(request, 'novels/chapter_detail.html', {
         'novel': chapter.novel,
@@ -91,7 +156,7 @@ def chapter_detail_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_create_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = SceneForm(request.POST)
         if form.is_valid():
@@ -111,7 +176,7 @@ def scene_create_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     active_scenes = list(scene.chapter.scenes.filter(archived=False).order_by('order'))
     current_index = next((i for i, s in enumerate(active_scenes) if s.pk == scene.pk), None)
     prev_scene = active_scenes[current_index - 1] if current_index and current_index > 0 else None
@@ -126,7 +191,7 @@ def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_edit_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = SceneForm(request.POST, instance=scene)
         if form.is_valid():
@@ -145,7 +210,7 @@ def scene_edit_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_archive_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         scene.archived = True
         scene.save()
@@ -160,7 +225,7 @@ def scene_archive_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_restore_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=True)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=True)
     if request.method == 'POST':
         scene.archived = False
         scene.save()
@@ -175,7 +240,7 @@ def scene_restore_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user)
     if request.method == 'POST':
         title = scene.title
         scene.delete()
@@ -190,7 +255,7 @@ def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def archived_scene_list_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     scenes = chapter.scenes.filter(archived=True)
     return render(request, 'novels/archived_scene_list.html', {
         'novel': chapter.novel,
@@ -201,7 +266,7 @@ def archived_scene_list_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_reorder_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     if request.method == 'POST':
         try:
             from django.db import transaction
@@ -252,7 +317,7 @@ def archived_novel_list_view(request):
 
 @login_required
 def chapter_edit_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = ChapterForm(request.POST, instance=chapter)
         if form.is_valid():
@@ -265,11 +330,13 @@ def chapter_edit_view(request, novel_pk, chapter_pk):
 
 @login_required
 def chapter_archive_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         chapter.archived = True
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
+        if chapter.novel.parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_archive.html', {'chapter': chapter, 'novel': chapter.novel})
 
@@ -288,8 +355,8 @@ def scene_move_view(request, novel_pk, scene_pk):
     scene = get_object_or_404(
         Scene,
         pk=scene_pk,
-        chapter__novel__pk=novel_pk,
-        chapter__novel__user=request.user,
+        chapter__part__novel__pk=novel_pk,
+        chapter__part__novel__user=request.user,
         archived=False
     )
 
@@ -297,7 +364,7 @@ def scene_move_view(request, novel_pk, scene_pk):
         data = json.loads(request.body)
         target_chapter_id = int(data['target_chapter_id'])
         target_chapter = get_object_or_404(
-            Chapter, pk=target_chapter_id, novel__pk=novel_pk, archived=False
+            Chapter, pk=target_chapter_id, part__novel__pk=novel_pk, archived=False
         )
 
         # No-op if dropped back onto the same chapter
@@ -306,6 +373,8 @@ def scene_move_view(request, novel_pk, scene_pk):
 
         with transaction.atomic():
             source_chapter = scene.chapter
+            part_pk = source_chapter.part.pk
+            novel = source_chapter.novel
             old_order = scene.order
 
             # Append to end of destination chapter
@@ -365,8 +434,8 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
         Scene,
         pk=scene_pk,
         chapter__pk=chapter_pk,
-        chapter__novel__pk=novel_pk,
-        chapter__novel__user=request.user,
+        chapter__part__novel__pk=novel_pk,
+        chapter__part__novel__user=request.user,
         archived=False
     )
 
@@ -392,28 +461,34 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def chapter_restore_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=True)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=True)
     if request.method == 'POST':
         chapter.archived = False
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' restored successfully.")
+        if chapter.novel.parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_restore.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
 def chapter_delete_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     if request.method == 'POST':
         title = chapter.title
+        part_pk = chapter.part.pk
+        parts_enabled = chapter.novel.parts_enabled
         chapter.delete()
         messages.success(request, f"Chapter '{title}' deleted permanently.")
+        if parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=part_pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_delete.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
 def archived_chapter_list_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
-    chapters = novel.chapters.filter(archived=True)
+    chapters = Chapter.objects.filter(part__novel=novel, archived=True)
     return render(request, 'novels/archived_chapter_list.html', {'novel': novel, 'chapters': chapters})
 
 @login_required
@@ -423,10 +498,10 @@ def chapter_reorder_view(request, novel_pk):
         try:
             data = json.loads(request.body)
             chapter_ids = data.get('chapter_ids', [])
-            
+
             # Fetch all chapters for this novel to batch update or verify
-            chapters = {str(c.pk): c for c in novel.chapters.filter(archived=False)}
-            
+            chapters = {str(c.pk): c for c in Chapter.objects.filter(part__novel=novel, archived=False)}
+
             valid_ids = [cid for cid in chapter_ids if str(cid) in chapters]
             
             # Update order

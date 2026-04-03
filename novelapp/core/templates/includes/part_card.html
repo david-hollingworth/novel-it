@@ -1,0 +1,30 @@
+{# Part card — used in novel_detail.html when parts are enabled #}
+{# Expects: part, novel #}
+<div data-id="{{ part.pk }}"
+    class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+
+    <div class="p-4">
+        <div class="flex items-start justify-between mb-1">
+            <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Part {{ part.order }}</span>
+        </div>
+        <h3 class="text-sm font-bold text-slate-900 mb-1 truncate">
+            <a href="{% url 'part_detail' novel.pk part.pk %}" class="hover:text-indigo-600">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</a>
+        </h3>
+        {% if part.summary %}
+        <p class="text-slate-600 text-xs mb-3 line-clamp-2">{{ part.summary }}</p>
+        {% else %}
+        <p class="text-slate-400 text-xs mb-3 italic">No summary available.</p>
+        {% endif %}
+        <div class="pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+            <span>{{ part.word_count }} words</span>
+            <span>{{ part.get_chapter_count }} chapter{{ part.get_chapter_count|pluralize }}</span>
+        </div>
+        <div class="mt-3 flex space-x-2">
+            <a href="{% url 'part_detail' novel.pk part.pk %}"
+                class="flex-1 text-center px-2 py-1 text-xs font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200">View</a>
+            <a href="{% url 'part_edit' novel.pk part.pk %}"
+                class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
+        </div>
+    </div>
+
+</div>{# end part card #}
