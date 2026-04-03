@@ -271,6 +271,7 @@ def chapter_archive_view(request, novel_pk, chapter_pk):
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
         return redirect('novel_detail', pk=novel_pk)
+    return render(request, 'novels/chapter_confirm_archive.html', {'chapter': chapter, 'novel': chapter.novel})
 
 
 @login_required
@@ -388,7 +389,6 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return render(request, 'novels/chapter_confirm_archive.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
 def chapter_restore_view(request, novel_pk, chapter_pk):
