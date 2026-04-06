@@ -157,19 +157,15 @@
         {% else %}
 
             {# ── Parts-disabled view: render chapters from the transparent part #}
-            {% with chapters=parts.first.chapters.all %}
             {% if chapters %}
             <div id="chapter-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
                 {% for chapter in chapters %}
-                {% if not chapter.archived %}
                 {% include "includes/chapter_card.html" with chapter=chapter novel=novel %}
-                {% endif %}
                 {% endfor %}
             </div>
             {% else %}
             {% include "includes/no_chapters_empty_state.html" with novel=novel %}
             {% endif %}
-            {% endwith %}
 
         {% endif %}
 

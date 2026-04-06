@@ -4,9 +4,6 @@
     class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
 
     <div class="p-4">
-        <div class="flex items-start justify-between mb-1">
-            <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Part {{ part.order }}</span>
-        </div>
         <h3 class="text-sm font-bold text-slate-900 mb-1 truncate">
             <a href="{% url 'part_detail' novel.pk part.pk %}" class="hover:text-indigo-600">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</a>
         </h3>

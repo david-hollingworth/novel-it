@@ -1,5 +1,5 @@
-{# Empty state displayed when a novel has no chapters #}
-{# Expects: novel #}
+{# Empty state displayed when a part or novel has no chapters #}
+{# Expects: novel, part (optional) #}
 <div class="text-center py-12 bg-white rounded-lg border-2 border-dashed border-slate-300">
     <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -9,7 +9,7 @@
     <h3 class="mt-2 text-sm font-medium text-slate-900">No chapters created yet</h3>
     <p class="mt-1 text-sm text-slate-500">Get started by adding a new chapter.</p>
     <div class="mt-6">
-        <a href="{% url 'chapter_create' novel.pk %}"
+        <a href="{% if part %}{% url 'chapter_create_in_part' novel.pk part.pk %}{% else %}{% url 'chapter_create' novel.pk %}{% endif %}"
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                 fill="currentColor" aria-hidden="true">

@@ -33,6 +33,21 @@
                 {% endfor %}
             </div>
             {% endfor %}
+            {% if default_chapters %}
+            <div class="space-y-1">
+                <label class="block text-sm font-medium text-slate-700">Assign chapters to this part <span class="text-slate-400 font-normal">(optional)</span></label>
+                <p class="text-xs text-slate-500 mb-2">These chapters are currently at the novel level. Select any you want to move to this part.</p>
+                <div class="border border-slate-200 rounded-md overflow-y-auto" style="max-height: 200px;">
+                    {% for chapter in default_chapters %}
+                    <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 cursor-pointer {% if not forloop.last %}border-b border-slate-100{% endif %}">
+                        <input type="checkbox" name="selected_chapters" value="{{ chapter.pk }}"
+                            class="h-4 w-4 text-indigo-600 border-slate-300 rounded">
+                        <span class="text-sm text-slate-700">{{ chapter.title }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             <div class="flex justify-end space-x-3">
                 <a href="{% if part %}{% url 'part_detail' novel.pk part.pk %}{% else %}{% url 'novel_detail' novel.pk %}{% endif %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Cancel</a>
