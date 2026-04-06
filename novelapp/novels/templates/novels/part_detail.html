@@ -109,6 +109,8 @@
                 <a href="{% url 'part_edit' novel.pk part.pk %}"
                     class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit Details</a>
                 <button onclick="openArchiveModal()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archive</button>
+                <a href="{% url 'part_delete' novel.pk part.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
                 <a href="{% url 'chapter_create_in_part' novel.pk part.pk %}"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add Chapter</a>
                 <a href="{% url 'archived_chapter_list_in_part' novel.pk part.pk %}"

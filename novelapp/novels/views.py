@@ -207,6 +207,49 @@ def part_create_view(request, novel_pk):
 
 
 @login_required
+def part_delete_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel)
+    if request.method == 'POST':
+        title = part.title
+        part.delete()  # cascades to chapters and scenes via FK CASCADE
+        messages.success(request, f"Part '{title}' permanently deleted.")
+        return redirect('novel_detail', pk=novel_pk)
+    return render(request, 'novels/part_confirm_delete.html', {
+        'novel': novel,
+        'part': part,
+    })
+
+
+@login_required
+def part_unarchive_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=True)
+    archived_chapter_count = part.chapters.filter(archived=True).count()
+    if request.method == 'POST':
+        part.archived = False
+        part.save()
+        part.update_word_count()  # recalculate — archived chapters don't contribute
+        messages.success(request, f"Part '{part.title}' restored.")
+        return redirect('novel_detail', pk=novel_pk)
+    return render(request, 'novels/part_confirm_restore.html', {
+        'novel': novel,
+        'part': part,
+        'archived_chapter_count': archived_chapter_count,
+    })
+
+
+@login_required
+def archived_part_list_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
+    parts = novel.parts.filter(archived=True).exclude(title='_default')
+    return render(request, 'novels/archived_part_list.html', {
+        'novel': novel,
+        'parts': parts,
+    })
+
+
+@login_required
 def novel_list_view(request):
     novels = Novel.objects.filter(user=request.user, archived=False)
     return render(request, 'novels/novel_list.html', {'novels': novels})
@@ -641,6 +684,7 @@ def chapter_restore_view(request, novel_pk, chapter_pk):
     if request.method == 'POST':
         chapter.archived = False
         chapter.save()
+        chapter.update_word_count()  # recalculate — triggers part and novel cascade
         messages.success(request, f"Chapter '{chapter.title}' restored successfully.")
         if chapter.novel.parts_enabled:
             return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
