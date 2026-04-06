@@ -7,13 +7,24 @@
         <div>
             <h1 class="text-3xl font-bold text-slate-800">Archived Chapters</h1>
             <p class="mt-1 text-slate-500">
+                {% if part %}
+                Archived chapters for <span class="font-medium text-slate-700">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</span> in <span class="font-medium text-slate-700">{{ novel.title }}</span>.
+                {% else %}
                 Archived chapters for <span class="font-medium text-slate-700">{{ novel.title }}</span>.
+                {% endif %}
             </p>
         </div>
+        {% if part %}
+        <a href="{% url 'part_detail' novel.pk part.pk %}"
+            class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
+            Back to Part
+        </a>
+        {% else %}
         <a href="{% url 'novel_detail' novel.pk %}"
             class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
             Back to Novel
         </a>
+        {% endif %}
     </div>
 
     <!-- Chapter Grid -->
