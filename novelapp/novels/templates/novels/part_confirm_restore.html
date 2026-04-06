@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10">
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Restore Part?</h2>
+        <p class="text-slate-600 mb-6">
+            Are you sure you want to restore the part <strong>"{{ part.title }}"</strong>?
+            It will reappear on the novel structure display.
+        </p>
+        {% if archived_chapter_count %}
+        <p class="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-4 py-3 mb-6">
+            This part has archived chapters. Use <strong>Archived Chapters</strong> on the part board to restore them separately.
+        </p>
+        {% endif %}
+        <form method="post" class="flex items-center space-x-4">
+            {% csrf_token %}
+            <button type="submit"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                Yes, Restore Part
+            </button>
+            <a href="{% url 'archived_part_list' novel.pk %}"
+                class="px-4 py-2 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300">
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

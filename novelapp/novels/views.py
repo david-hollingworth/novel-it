@@ -5,8 +5,249 @@ from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Max, F
 import json
-from .models import Novel, Chapter, Scene
-from .forms import NovelForm, ChapterForm, SceneForm
+from .models import Novel, Part, Chapter, Scene
+from .forms import NovelForm, PartForm, ChapterForm, SceneForm
+
+@login_required
+def part_detail_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+    chapters = part.chapters.filter(archived=False)
+    other_active_parts = novel.parts.filter(archived=False).exclude(
+        pk=part.pk).exclude(title='_default')
+    return render(request, 'novels/part_detail.html', {
+        'novel': novel,
+        'part': part,
+        'chapters': chapters,
+        'show_archive_modal': False,
+        'has_active_chapters': chapters.exists(),
+        'is_last_active_part': not other_active_parts.exists(),
+        'other_active_parts': other_active_parts,
+    })
+
+
+@login_required
+def part_archive_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+
+    # Active chapters on this part (archived chapters are ignored per R-FUNC-0213.01)
+    active_chapters = part.chapters.filter(archived=False)
+    has_active_chapters = active_chapters.exists()
+
+    # Active non-default parts other than this one
+    other_active_parts = novel.parts.filter(archived=False).exclude(
+        pk=part.pk).exclude(title='_default')
+    is_last_active_part = not other_active_parts.exists()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        with transaction.atomic():
+            if action == 'archive_only':
+                # No active chapters — just archive the part
+                part.archived = True
+                part.save()
+                messages.success(request, f"Part '{part.title}' archived.")
+
+            elif action == 'archive_with_chapters':
+                # Archive the part and all its active chapters
+                active_chapters.update(archived=True)
+                part.archived = True
+                part.save()
+                part.novel.update_word_count()
+                messages.success(
+                    request, f"Part '{part.title}' and its chapters archived.")
+
+            elif action == 'move_to_part':
+                # Reparent active chapters to the selected destination part
+                destination_part_id = request.POST.get('destination_part_id')
+                destination_part = get_object_or_404(
+                    Part, pk=destination_part_id, novel=novel, archived=False)
+                max_order = destination_part.chapters.aggregate(
+                    Max('order'))['order__max'] or 0
+                for index, chapter in enumerate(active_chapters.order_by('order'), start=1):
+                    chapter.part = destination_part
+                    chapter.order = max_order + index
+                    chapter.save(update_fields=['part', 'order'])
+                part.archived = True
+                part.save()
+                # Recalculate word counts on both parts
+                part.update_word_count()
+                destination_part.update_word_count()
+                messages.success(
+                    request,
+                    f"Part '{part.title}' archived. Chapters moved to '{destination_part.title}'.")
+
+            elif action == 'move_to_novel':
+                # Last active part — reparent chapters to _default, disable parts
+                default_part, _ = Part.objects.get_or_create(
+                    novel=novel,
+                    title='_default',
+                    defaults={'order': 0},
+                )
+                max_order = default_part.chapters.aggregate(
+                    Max('order'))['order__max'] or 0
+                for index, chapter in enumerate(active_chapters.order_by('order'), start=1):
+                    chapter.part = default_part
+                    chapter.order = max_order + index
+                    chapter.save(update_fields=['part', 'order'])
+                part.archived = True
+                part.save()
+                novel.parts_enabled = False
+                novel.save(update_fields=['parts_enabled'])
+                part.update_word_count()
+                default_part.update_word_count()
+                messages.success(
+                    request,
+                    f"Part '{part.title}' archived. Chapters moved to novel. Parts disabled.")
+
+            else:
+                messages.error(request, "Invalid action.")
+                return redirect('part_detail', novel_pk=novel_pk, part_pk=part_pk)
+
+        return redirect('novel_detail', pk=novel_pk)
+
+    # GET — render the part detail page; the modal is triggered from there
+    # Pass context needed by the modal
+    return render(request, 'novels/part_detail.html', {
+        'novel': novel,
+        'part': part,
+        'chapters': active_chapters,
+        'show_archive_modal': True,
+        'has_active_chapters': has_active_chapters,
+        'is_last_active_part': is_last_active_part,
+        'other_active_parts': other_active_parts,
+    })
+
+
+@login_required
+def part_edit_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+
+    # Chapters in _default are chapters at the novel level available to assign
+    default_part = novel.parts.filter(title='_default').first()
+    default_chapters = default_part.chapters.filter(archived=False).order_by('order') if default_part else Chapter.objects.none()
+
+    if request.method == 'POST':
+        form = PartForm(request.POST, instance=part)
+        if form.is_valid():
+            form.save()
+
+            # Reparent any selected chapters to this part
+            selected_ids = request.POST.getlist('selected_chapters')
+            if selected_ids and default_part:
+                valid_chapters = default_part.chapters.filter(
+                    pk__in=selected_ids, archived=False).order_by('order')
+                max_order = part.chapters.aggregate(Max('order'))['order__max'] or 0
+                for index, chapter in enumerate(valid_chapters, start=1):
+                    chapter.part = part
+                    chapter.order = max_order + index
+                    chapter.save(update_fields=['part', 'order'])
+                default_part.update_word_count()
+                part.update_word_count()
+
+            messages.success(request, f"Part '{part.title}' updated successfully.")
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=part.pk)
+    else:
+        form = PartForm(instance=part)
+    return render(request, 'novels/part_form.html', {
+        'form': form,
+        'novel': novel,
+        'part': part,
+        'title': 'Edit Part',
+        'default_chapters': default_chapters,
+    })
+
+
+@login_required
+def part_create_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+
+    # Chapters in _default are chapters at the novel level available to assign
+    default_part = novel.parts.filter(title='_default').first()
+    default_chapters = default_part.chapters.filter(archived=False).order_by('order') if default_part else Chapter.objects.none()
+
+    if request.method == 'POST':
+        form = PartForm(request.POST)
+        if form.is_valid():
+            part = form.save(commit=False)
+            part.novel = novel
+            # Use Max across all parts including archived to avoid unique_together
+            # conflicts with archived parts that still occupy their order values
+            last_order = novel.parts.exclude(title='_default').aggregate(
+                Max('order'))['order__max'] or 0
+            part.order = last_order + 1
+            part.save()
+
+            # Reparent any selected chapters to the new part
+            selected_ids = request.POST.getlist('selected_chapters')
+            if selected_ids and default_part:
+                valid_chapters = default_part.chapters.filter(
+                    pk__in=selected_ids, archived=False).order_by('order')
+                max_order = part.chapters.aggregate(Max('order'))['order__max'] or 0
+                for index, chapter in enumerate(valid_chapters, start=1):
+                    chapter.part = part
+                    chapter.order = max_order + index
+                    chapter.save(update_fields=['part', 'order'])
+                default_part.update_word_count()
+                part.update_word_count()
+
+            messages.success(request, f"Part '{part.title}' created.")
+            return redirect('novel_detail', pk=novel.pk)
+    else:
+        form = PartForm()
+    return render(request, 'novels/part_form.html', {
+        'form': form,
+        'novel': novel,
+        'title': 'Add Part',
+        'default_chapters': default_chapters,
+    })
+
+
+@login_required
+def part_delete_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel)
+    if request.method == 'POST':
+        title = part.title
+        part.delete()  # cascades to chapters and scenes via FK CASCADE
+        messages.success(request, f"Part '{title}' permanently deleted.")
+        return redirect('novel_detail', pk=novel_pk)
+    return render(request, 'novels/part_confirm_delete.html', {
+        'novel': novel,
+        'part': part,
+    })
+
+
+@login_required
+def part_unarchive_view(request, novel_pk, part_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
+    part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=True)
+    archived_chapter_count = part.chapters.filter(archived=True).count()
+    if request.method == 'POST':
+        part.archived = False
+        part.save()
+        part.update_word_count()  # recalculate — archived chapters don't contribute
+        messages.success(request, f"Part '{part.title}' restored.")
+        return redirect('novel_detail', pk=novel_pk)
+    return render(request, 'novels/part_confirm_restore.html', {
+        'novel': novel,
+        'part': part,
+        'archived_chapter_count': archived_chapter_count,
+    })
+
+
+@login_required
+def archived_part_list_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
+    parts = novel.parts.filter(archived=True).exclude(title='_default')
+    return render(request, 'novels/archived_part_list.html', {
+        'novel': novel,
+        'parts': parts,
+    })
+
 
 @login_required
 def novel_list_view(request):
@@ -30,10 +271,14 @@ def novel_create_view(request):
 @login_required
 def novel_detail_view(request, pk):
     novel = get_object_or_404(Novel, pk=pk, user=request.user, archived=False)
-    chapters = novel.chapters.filter(archived=False)
+    parts = novel.parts.filter(archived=False).exclude(title='_default')
+    # When parts are disabled, fetch chapters via the _default transparent part
+    default_part = novel.parts.filter(title='_default').first()
+    chapters = default_part.chapters.filter(archived=False) if default_part else Chapter.objects.none()
     return render(request, 'novels/novel_detail.html', {
         'novel': novel,
-        'chapters': chapters
+        'parts': parts,
+        'chapters': chapters,
     })
 
 @login_required
@@ -42,11 +287,32 @@ def novel_update_view(request, pk):
     if novel.user != request.user:
         messages.error(request, "You do not have permission to edit this novel.")
         return redirect('dashboard')
-    
+
     if request.method == 'POST':
+        was_parts_enabled = novel.parts_enabled
         form = NovelForm(request.POST, instance=novel)
         if form.is_valid():
-            form.save()
+            novel = form.save()
+            # If parts were just disabled, move all active chapters from named
+            # parts into _default so they remain visible at the novel level
+            if was_parts_enabled and not novel.parts_enabled:
+                with transaction.atomic():
+                    default_part, _ = Part.objects.get_or_create(
+                        novel=novel,
+                        title='_default',
+                        defaults={'order': 0},
+                    )
+                    named_parts = novel.parts.filter(archived=False).exclude(title='_default')
+                    for part in named_parts:
+                        active_chapters = part.chapters.filter(archived=False).order_by('order')
+                        max_order = default_part.chapters.aggregate(
+                            Max('order'))['order__max'] or 0
+                        for index, chapter in enumerate(active_chapters, start=1):
+                            chapter.part = default_part
+                            chapter.order = max_order + index
+                            chapter.save(update_fields=['part', 'order'])
+                        max_order += active_chapters.count()
+                    default_part.update_word_count()
             messages.success(request, f"Novel '{novel.title}' updated successfully.")
             return redirect('novel_detail', pk=novel.pk)
     else:
@@ -64,16 +330,34 @@ def novel_delete_view(request, pk):
     return render(request, 'novels/novel_confirm_delete.html', {'novel': novel})
 
 @login_required
-def chapter_create_view(request, novel_pk):
+def chapter_create_view(request, novel_pk, part_pk=None):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    # If part_pk is supplied (from a part detail page), use that part.
+    # Otherwise fall back to the transparent _default part.
+    if part_pk:
+        part = get_object_or_404(Part, pk=part_pk, novel=novel, archived=False)
+    else:
+        # When parts are not enabled, chapters are parented off a single
+        # transparent _default part. Look it up by title, not order, since
+        # user-created parts may also have order=1.
+        part, _ = Part.objects.get_or_create(
+            novel=novel,
+            title='_default',
+            defaults={'order': 0},
+        )
     if request.method == 'POST':
         form = ChapterForm(request.POST)
         if form.is_valid():
             chapter = form.save(commit=False)
-            chapter.novel = novel
-            chapter.order = novel.get_chapter_count() + 1
+            chapter.part = part
+            # Use Max order to avoid unique_together conflicts with any
+            # existing chapters (including archived ones) under this part
+            max_order = part.chapters.aggregate(Max('order'))['order__max'] or 0
+            chapter.order = max_order + 1
             chapter.save()
             messages.success(request, f"Chapter '{chapter.title}' created.")
+            if novel.parts_enabled:
+                return redirect('part_detail', novel_pk=novel.pk, part_pk=part.pk)
             return redirect('novel_detail', pk=novel.pk)
     else:
         form = ChapterForm()
@@ -81,7 +365,7 @@ def chapter_create_view(request, novel_pk):
 
 @login_required
 def chapter_detail_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     scenes = chapter.scenes.filter(archived=False)
     return render(request, 'novels/chapter_detail.html', {
         'novel': chapter.novel,
@@ -91,7 +375,7 @@ def chapter_detail_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_create_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = SceneForm(request.POST)
         if form.is_valid():
@@ -111,7 +395,7 @@ def scene_create_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     active_scenes = list(scene.chapter.scenes.filter(archived=False).order_by('order'))
     current_index = next((i for i, s in enumerate(active_scenes) if s.pk == scene.pk), None)
     prev_scene = active_scenes[current_index - 1] if current_index and current_index > 0 else None
@@ -126,7 +410,7 @@ def scene_editor_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_edit_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = SceneForm(request.POST, instance=scene)
         if form.is_valid():
@@ -145,7 +429,7 @@ def scene_edit_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_archive_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=False)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         scene.archived = True
         scene.save()
@@ -160,7 +444,7 @@ def scene_archive_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_restore_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user, archived=True)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user, archived=True)
     if request.method == 'POST':
         scene.archived = False
         scene.save()
@@ -175,7 +459,7 @@ def scene_restore_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
-    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__novel__pk=novel_pk, chapter__novel__user=request.user)
+    scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user)
     if request.method == 'POST':
         title = scene.title
         scene.delete()
@@ -190,7 +474,7 @@ def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def archived_scene_list_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     scenes = chapter.scenes.filter(archived=True)
     return render(request, 'novels/archived_scene_list.html', {
         'novel': chapter.novel,
@@ -201,7 +485,7 @@ def archived_scene_list_view(request, novel_pk, chapter_pk):
 
 @login_required
 def scene_reorder_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     if request.method == 'POST':
         try:
             from django.db import transaction
@@ -252,7 +536,7 @@ def archived_novel_list_view(request):
 
 @login_required
 def chapter_edit_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         form = ChapterForm(request.POST, instance=chapter)
         if form.is_valid():
@@ -265,11 +549,13 @@ def chapter_edit_view(request, novel_pk, chapter_pk):
 
 @login_required
 def chapter_archive_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=False)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=False)
     if request.method == 'POST':
         chapter.archived = True
         chapter.save()
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
+        if chapter.novel.parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_archive.html', {'chapter': chapter, 'novel': chapter.novel})
 
@@ -288,8 +574,8 @@ def scene_move_view(request, novel_pk, scene_pk):
     scene = get_object_or_404(
         Scene,
         pk=scene_pk,
-        chapter__novel__pk=novel_pk,
-        chapter__novel__user=request.user,
+        chapter__part__novel__pk=novel_pk,
+        chapter__part__novel__user=request.user,
         archived=False
     )
 
@@ -297,7 +583,7 @@ def scene_move_view(request, novel_pk, scene_pk):
         data = json.loads(request.body)
         target_chapter_id = int(data['target_chapter_id'])
         target_chapter = get_object_or_404(
-            Chapter, pk=target_chapter_id, novel__pk=novel_pk, archived=False
+            Chapter, pk=target_chapter_id, part__novel__pk=novel_pk, archived=False
         )
 
         # No-op if dropped back onto the same chapter
@@ -306,6 +592,8 @@ def scene_move_view(request, novel_pk, scene_pk):
 
         with transaction.atomic():
             source_chapter = scene.chapter
+            part_pk = source_chapter.part.pk
+            novel = source_chapter.novel
             old_order = scene.order
 
             # Append to end of destination chapter
@@ -365,8 +653,8 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
         Scene,
         pk=scene_pk,
         chapter__pk=chapter_pk,
-        chapter__novel__pk=novel_pk,
-        chapter__novel__user=request.user,
+        chapter__part__novel__pk=novel_pk,
+        chapter__part__novel__user=request.user,
         archived=False
     )
 
@@ -392,29 +680,45 @@ def scene_save_view(request, novel_pk, chapter_pk, scene_pk):
 
 @login_required
 def chapter_restore_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user, archived=True)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user, archived=True)
     if request.method == 'POST':
         chapter.archived = False
         chapter.save()
+        chapter.update_word_count()  # recalculate — triggers part and novel cascade
         messages.success(request, f"Chapter '{chapter.title}' restored successfully.")
+        if chapter.novel.parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_restore.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
 def chapter_delete_view(request, novel_pk, chapter_pk):
-    chapter = get_object_or_404(Chapter, pk=chapter_pk, novel__pk=novel_pk, novel__user=request.user)
+    chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     if request.method == 'POST':
         title = chapter.title
+        part_pk = chapter.part.pk
+        parts_enabled = chapter.novel.parts_enabled
         chapter.delete()
         messages.success(request, f"Chapter '{title}' deleted permanently.")
+        if parts_enabled:
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=part_pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_delete.html', {'chapter': chapter, 'novel': chapter.novel})
 
 @login_required
-def archived_chapter_list_view(request, novel_pk):
+def archived_chapter_list_view(request, novel_pk, part_pk=None):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
-    chapters = novel.chapters.filter(archived=True)
-    return render(request, 'novels/archived_chapter_list.html', {'novel': novel, 'chapters': chapters})
+    if part_pk:
+        part = get_object_or_404(Part, pk=part_pk, novel=novel)
+        chapters = Chapter.objects.filter(part=part, archived=True)
+    else:
+        part = None
+        chapters = Chapter.objects.filter(part__novel=novel, archived=True)
+    return render(request, 'novels/archived_chapter_list.html', {
+        'novel': novel,
+        'part': part,
+        'chapters': chapters,
+    })
 
 @login_required
 def chapter_reorder_view(request, novel_pk):
@@ -423,10 +727,10 @@ def chapter_reorder_view(request, novel_pk):
         try:
             data = json.loads(request.body)
             chapter_ids = data.get('chapter_ids', [])
-            
+
             # Fetch all chapters for this novel to batch update or verify
-            chapters = {str(c.pk): c for c in novel.chapters.filter(archived=False)}
-            
+            chapters = {str(c.pk): c for c in Chapter.objects.filter(part__novel=novel, archived=False)}
+
             valid_ids = [cid for cid in chapter_ids if str(cid) in chapters]
             
             # Update order

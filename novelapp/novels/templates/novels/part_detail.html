@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %} - {{ novel.title }} - Novel It{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/sortable.min.js' %}"></script>
+<script>
+    const CSRF_TOKEN = '{{ csrf_token }}';
+    const NOVEL_PK = {{ novel.pk }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ── Chapter reordering ───────────────────────────────────────────────
+        var chapterList = document.getElementById('chapter-list');
+        if (chapterList) {
+            var chapterSortable = Sortable.create(chapterList, {
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                handle: '.chapter-drag-handle',
+                onEnd: function (evt) {
+                    var order = chapterSortable.toArray();
+                    fetch("{% url 'chapter_reorder' novel.pk %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                        body: JSON.stringify({ chapter_ids: order })
+                    }).then(response => {
+                        if (!response.ok) console.error('Chapter reorder failed');
+                    }).catch(error => console.error('Error:', error));
+
+                    var items = chapterList.children;
+                    for (var i = 0; i < items.length; i++) {
+                        var span = items[i].querySelector('span.chapter-order-label');
+                        if (span) span.textContent = 'Chapter ' + (i + 1);
+                    }
+                }
+            });
+        }
+
+        // ── Scene cross-chapter drag-and-drop ──────────────────────────────
+        document.querySelectorAll('.chapter-card').forEach(function (card) {
+            var chapterId = card.dataset.id;
+            var sceneList = card.querySelector('.scene-list');
+
+            Sortable.create(sceneList, {
+                group: 'scenes',
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                emptyInsertThreshold: 20,
+                onAdd: function (evt) {
+                    var sceneId = evt.item.dataset.id;
+                    var sourceList = evt.from;
+
+                    fetch(`/novels/${NOVEL_PK}/scene/${sceneId}/move/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                        body: JSON.stringify({ target_chapter_id: parseInt(chapterId) })
+                    }).then(r => r.json()).then(data => {
+                        if (data.status !== 'success') {
+                            sourceList.insertBefore(evt.item, sourceList.children[evt.oldIndex] || null);
+                            console.error('Scene move failed:', data.message);
+                        } else {
+                            updateChapterCounts(data.source_chapter_id, data.source_word_count, data.source_scene_count);
+                            updateChapterCounts(data.target_chapter_id, data.target_word_count, data.target_scene_count);
+                        }
+                    }).catch(err => {
+                        sourceList.insertBefore(evt.item, sourceList.children[evt.oldIndex] || null);
+                        console.error('Error:', err);
+                    });
+                }
+            });
+
+            card.addEventListener('dragover', function (e) {
+                var alpineData = card._x_dataStack && card._x_dataStack[0];
+                if (alpineData && !alpineData.open) {
+                    alpineData.open = true;
+                }
+            });
+        });
+
+        function updateChapterCounts(chapterId, wordCount, sceneCount) {
+            var card = document.querySelector(`.chapter-card[data-id="${chapterId}"]`);
+            if (!card) return;
+            var wc = card.querySelector('.chapter-word-count');
+            var sc = card.querySelector('.chapter-scene-count');
+            if (wc) wc.textContent = wordCount;
+            if (sc) sc.textContent = sceneCount + ' scene' + (sceneCount !== 1 ? 's' : '');
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <nav class="flex text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+                    <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
+                    <span class="mx-2">/</span>
+                    <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                    <span class="mx-2">/</span>
+                    <span class="text-slate-900 font-medium">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</span>
+                </nav>
+                <h1 class="text-3xl font-bold text-slate-900">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</h1>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'part_edit' novel.pk part.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Edit Details</a>
+                <button onclick="openArchiveModal()" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archive</button>
+                <a href="{% url 'part_delete' novel.pk part.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
+                <a href="{% url 'chapter_create_in_part' novel.pk part.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add Chapter</a>
+                <a href="{% url 'archived_chapter_list_in_part' novel.pk part.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archived Chapters</a>
+            </div>
+        </div>
+        {% if part.summary %}
+        <p class="text-slate-600 max-w-3xl user-content">{{ part.summary }}</p>
+        {% endif %}
+        <div class="mt-6 flex space-x-6 text-sm">
+            <div class="flex items-center text-slate-500">
+                <span class="font-bold text-slate-900 mr-2">{{ part.word_count }}</span> Words
+            </div>
+            <div class="flex items-center text-slate-500">
+                <span class="font-bold text-slate-900 mr-2">{{ part.get_chapter_count }}</span> Chapters
+            </div>
+            <div class="flex items-center text-slate-500">
+                <span class="font-bold text-slate-900 mr-2">{{ part.get_scene_count }}</span> Scenes
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-6 items-start">
+
+        {% include "includes/novel_sidebar.html" with novel=novel active_nav="" %}
+
+        <div class="flex-1 min-w-0">
+        {% if chapters %}
+        <div id="chapter-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
+            {% for chapter in chapters %}
+            {% include "includes/chapter_card.html" with chapter=chapter novel=novel %}
+            {% endfor %}
+        </div>
+        {% else %}
+        {% include "includes/no_chapters_empty_state.html" with novel=novel part=part %}
+        {% endif %}
+        </div>
+
+    </div>
+
+{# ── Archive Part Modal ──────────────────────────────────────────────────── #}
+<div id="archive-modal" style="display:none;" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4 p-6" style="box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 1px solid #94a3b8;">
+
+        <h2 class="text-lg font-bold text-slate-900 mb-2">Archive Part</h2>
+        <p class="text-sm text-slate-600 mb-6">
+            Archive <strong>{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</strong>?
+        </p>
+
+        {% if not has_active_chapters %}
+        {# ── No active chapters ──────────────────────────────────────── #}
+        <form method="post" action="{% url 'part_archive' novel.pk part.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="archive_only">
+            <p class="text-sm text-slate-500 mb-6">This part has no active chapters.</p>
+            <div class="flex space-x-3 justify-end">
+                <button type="button" onclick="closeArchiveModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-md hover:bg-yellow-700">Continue</button>
+            </div>
+        </form>
+
+        {% elif is_last_active_part %}
+        {# ── Active chapters, last active part ───────────────────────── #}
+        <p class="text-sm text-slate-500 mb-4">This part has active chapters. What would you like to do with them?</p>
+        <div class="space-y-2">
+            <form method="post" action="{% url 'part_archive' novel.pk part.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="move_to_novel">
+                <button type="submit" class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-md hover:bg-indigo-50 hover:border-indigo-300">
+                    Move Chapters to the Novel
+                    <span class="block text-xs text-slate-400 font-normal mt-0.5">Parts will be disabled and chapters moved to the novel level.</span>
+                </button>
+            </form>
+            <form method="post" action="{% url 'part_archive' novel.pk part.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="archive_with_chapters">
+                <button type="submit" class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-md hover:bg-indigo-50 hover:border-indigo-300">
+                    Archive Chapters with the Part
+                    <span class="block text-xs text-slate-400 font-normal mt-0.5">Chapters will be archived and hidden from view.</span>
+                </button>
+            </form>
+            <button type="button" onclick="closeArchiveModal()"
+                class="w-full text-left px-4 py-3 text-sm font-medium text-slate-500 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Cancel</button>
+        </div>
+
+        {% else %}
+        {# ── Active chapters, multiple active parts ───────────────────── #}
+        <p class="text-sm text-slate-500 mb-4">This part has active chapters. What would you like to do with them?</p>
+        <div class="space-y-2">
+            <form method="post" action="{% url 'part_archive' novel.pk part.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="move_to_part">
+                <div class="px-4 py-3 bg-slate-50 border border-slate-200 rounded-md">
+                    <p class="text-sm font-medium text-slate-700 mb-2">Move Chapters to another Part</p>
+                    <select name="destination_part_id"
+                        class="w-full text-sm border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mb-3">
+                        {% for other_part in other_active_parts %}
+                        <option value="{{ other_part.pk }}">{% if other_part.title == '_default' %}Untitled Part{% else %}{{ other_part.title }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Move Chapters and Archive Part</button>
+                </div>
+            </form>
+            <form method="post" action="{% url 'part_archive' novel.pk part.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="archive_with_chapters">
+                <button type="submit" class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-md hover:bg-indigo-50 hover:border-indigo-300">
+                    Archive Chapters with the Part
+                    <span class="block text-xs text-slate-400 font-normal mt-0.5">Chapters will be archived and hidden from view.</span>
+                </button>
+            </form>
+            <button type="button" onclick="closeArchiveModal()"
+                class="w-full text-left px-4 py-3 text-sm font-medium text-slate-500 bg-white border border-slate-200 rounded-md hover:bg-slate-50">Cancel</button>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    function openArchiveModal() {
+        document.getElementById('archive-modal').style.display = 'flex';
+    }
+    function closeArchiveModal() {
+        document.getElementById('archive-modal').style.display = 'none';
+    }
+    // Close on backdrop click
+    document.getElementById('archive-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeArchiveModal();
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeArchiveModal();
+    });
+    {% if show_archive_modal %}
+    openArchiveModal();
+    {% endif %}
+</script>
+{% endblock %}

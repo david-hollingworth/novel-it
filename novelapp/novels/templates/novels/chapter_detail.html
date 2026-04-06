@@ -47,6 +47,10 @@
                     <a href="{% url 'novel_list' %}" class="hover:text-indigo-600">Novels</a>
                     <span class="mx-2">/</span>
                     <a href="{% url 'novel_detail' novel.pk %}" class="hover:text-indigo-600">{{ novel.title }}</a>
+                    {% if novel.parts_enabled %}
+                    <span class="mx-2">/</span>
+                    <a href="{% url 'part_detail' novel.pk chapter.part.pk %}" class="hover:text-indigo-600">{% if chapter.part.title == '_default' %}Untitled Part{% else %}{{ chapter.part.title }}{% endif %}</a>
+                    {% endif %}
                     <span class="mx-2">/</span>
                     <span class="text-slate-900 font-medium">Chapter {{ chapter.order }}</span>
                 </nav>
