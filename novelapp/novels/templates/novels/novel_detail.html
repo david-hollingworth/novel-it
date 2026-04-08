@@ -102,6 +102,12 @@
                     <span class="text-slate-900 font-medium">{{ novel.title }}</span>
                 </nav>
                 <h1 class="text-3xl font-bold text-slate-900">{{ novel.title }}</h1>
+                {% if novel.subtitle %}
+                <p class="text-lg text-slate-500 mt-1">{{ novel.subtitle }}</p>
+                {% endif %}
+                {% if novel.author_name %}
+                <p class="text-sm text-slate-500 mt-1">by {{ novel.author_name }}</p>
+                {% endif %}
             </div>
             <div class="flex space-x-2">
                 <a href="{% url 'novel_edit' novel.pk %}"
@@ -123,7 +129,21 @@
                 {% endif %}
             </div>
         </div>
-        <p class="text-slate-600 max-w-3xl user-content">{{ novel.description|default:"No description provided." }}</p>
+
+        <!-- Status and genre metadata row -->
+        <div class="flex flex-wrap gap-3 mb-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                {{ novel.get_status_display }}
+            </span>
+            {% if novel.genre %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                {{ novel.genre }}
+            </span>
+            {% endif %}
+        </div>
+
+        <p class="text-slate-600 max-w-3xl user-content">{{ novel.description|default:"No synopsis provided." }}</p>
+
         <div class="mt-6 flex space-x-6 text-sm">
             <div class="flex items-center text-slate-500">
                 <span class="font-bold text-slate-900 mr-2">{{ novel.word_count }}</span> Words

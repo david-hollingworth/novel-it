@@ -4,7 +4,7 @@ from django.utils import timezone
 import re
 
 
-# Manuscript entity status choices — applies to Parts, Chapters, and Scenes (FEAT-0229)
+# Manuscript entity status choices — applies to Novels, Parts, Chapters, and Scenes (FEAT-0229)
 MANUSCRIPT_STATUS_CHOICES = [
     ('not_started', 'Not Started'),
     ('plotting', 'Plotting'),
@@ -25,15 +25,52 @@ MANUSCRIPT_STATUS_DEFAULT = 'not_started'
 class Novel(models.Model):
     """
     A novel belongs to a user and contains chapters.
+    Implements FEAT-0201 (Add novel) and FEAT-0203 (Edit novel).
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='novels')
+
+    # Base entity: Name (FEAT-0004) — labelled Title for novels
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, help_text="Synopsis or description of the novel")
-    premise = models.TextField(blank=True, help_text="Premise or theme of the novel")
+
+    # Novel-specific: Subtitle (FEAT-0201)
+    subtitle = models.CharField(max_length=255, blank=True, help_text="Subtitle of the novel")
+
+    # Novel-specific: Author name (FEAT-0201)
+    author_name = models.CharField(max_length=255, blank=True, help_text="Author name")
+
+    # Novel-specific: Genre (FEAT-0201)
     genre = models.CharField(max_length=100, blank=True, help_text="Genre of the novel")
+
+    # Novel-specific: Target word count — see FEAT-1204 Novel word count goal
+    target_word_count = models.IntegerField(default=0, help_text="Target word count goal")
+
+    # Novel-specific: Status (FEAT-0201, FEAT-0229)
+    status = models.CharField(
+        max_length=20,
+        choices=MANUSCRIPT_STATUS_CHOICES,
+        default=MANUSCRIPT_STATUS_DEFAULT,
+        help_text="Current status of the novel",
+    )
+
+    # Base entity: Description (FEAT-0004) — labelled Synopsis for novels
+    description = models.TextField(blank=True, help_text="Synopsis of the novel")
+
+    # Base entity: Notes (FEAT-0004) — labelled Premise for novels
+    premise = models.TextField(blank=True, help_text="Premise or theme of the novel")
+
+    # Novel-specific: Pitch (FEAT-0201)
+    pitch = models.TextField(blank=True, help_text="One-paragraph pitch for the novel")
+
+    # Novel-specific: calculated from scenes; read-only (FEAT-0203)
     word_count = models.IntegerField(default=0, help_text="Total word count (calculated from scenes)")
+
+    # Base entity: Date and time created — system-set, not user-editable (FEAT-0004)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Base entity: Date and time last modified — system-set, not user-editable (FEAT-0004)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Base entity: Archived flag — supports FEAT-0004 / FEAT-0005
     archived = models.BooleanField(default=False, help_text="Soft delete flag")
 
     # Novel-specific: controls whether the Parts level is visible in the UI (FEAT-0201, FEAT-0203)
