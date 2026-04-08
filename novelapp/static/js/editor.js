@@ -426,6 +426,8 @@ function initEditor(options = {}) {
     // Public API
     // -----------------------------------------------------------------------
     function getValue() { return textarea.value; }
+    function getIsDirty() { return isDirty; }
+    function clearDirty() { isDirty = false; }
 
-    return { getValue, save };
+    return { getValue, save, isDirty: getIsDirty, clearDirty };
 }
