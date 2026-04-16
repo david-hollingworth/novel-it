@@ -51,3 +51,5 @@ Thumbs.db
 .claude
 tailwindcss-linux-x64
 
+# Debug-only tools (not for production or repository)
+novelapp/test_recorder/
