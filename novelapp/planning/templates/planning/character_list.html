@@ -1,6 +1,36 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Characters: {{ novel.title }} - Novel It{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/sortable.min.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var el = document.getElementById('character-list');
+        if (el) {
+            Sortable.create(el, {
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                handle: '.character-drag-handle',
+                onEnd: function (evt) {
+                    var order = [];
+                    el.querySelectorAll('[data-id]').forEach(function (item) {
+                        order.push(item.dataset.id);
+                    });
+                    fetch("{% url 'character_reorder' novel.pk %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({ character_ids: order })
+                    }).then(response => {
+                        if (!response.ok) console.error('Character reorder failed');
+                    }).catch(error => console.error('Error:', error));
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -27,37 +57,35 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div id="character-list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {% for character in characters %}
-        <a href="{% url 'character_detail' novel.pk character.pk %}"
-            class="block bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
-            <div class="p-6 flex items-start space-x-4">
+        <div data-id="{{ character.pk }}"
+            class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+            <div class="character-drag-handle p-4 cursor-move">
+                <div class="flex items-start justify-between mb-0.5">
+                    <h3 class="text-sm font-bold text-slate-900 truncate">
+                        <a href="{% url 'character_detail' novel.pk character.pk %}" class="hover:text-indigo-600">{{ character.fullname }}</a>
+                    </h3>
+                    <svg class="flex-shrink-0 h-4 w-4 text-slate-300 ml-2" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M4 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8-7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                    </svg>
+                </div>
+                <p class="text-indigo-600 text-xs font-medium mt-0.5">{{ character.role|default:"No role" }}</p>
                 {% if character.image %}
                 <img src="{{ character.image.url }}" alt="{{ character.fullname }}"
-                    class="h-16 w-16 rounded-full object-cover">
+                    class="h-16 w-16 rounded-full object-cover flex-shrink-0 mt-3 mx-auto">
                 {% else %}
-                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0 mt-3 mx-auto">
                     <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                 </div>
                 {% endif %}
-                <div>
-                    <h3 class="text-lg font-semibold text-slate-900">{{ character.fullname }}</h3>
-                    <p class="text-indigo-600 text-xs font-medium user-content">
-                        {{ character.role|default:"No role" }}
-                    </p>
-
-                    <p class="text-slate-500 text-sm line-clamp-2 mt-1 user-content">
-                        {{ character.description|default:"No description" }}
-                    </p>
-                </div>
             </div>
-        </a>
+        </div>
         {% empty %}
-        <div
-            class="col-span-full bg-white shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+        <div class="col-span-full bg-white shadow-sm overflow-hidden rounded-lg border border-slate-200 p-12 text-center text-slate-500">
             <h3 class="mt-2 text-sm font-medium text-slate-900">No characters yet</h3>
             <p class="mt-1 text-sm text-slate-500">Start by adding your first character.</p>
         </div>

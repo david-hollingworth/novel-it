@@ -1,6 +1,36 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Locations: {{ novel.title }} - Novel It{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/sortable.min.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var el = document.getElementById('location-list');
+        if (el) {
+            Sortable.create(el, {
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                handle: '.location-drag-handle',
+                onEnd: function (evt) {
+                    var order = [];
+                    el.querySelectorAll('[data-id]').forEach(function (item) {
+                        order.push(item.dataset.id);
+                    });
+                    fetch("{% url 'location_reorder' novel.pk %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({ location_ids: order })
+                    }).then(response => {
+                        if (!response.ok) console.error('Location reorder failed');
+                    }).catch(error => console.error('Error:', error));
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -27,35 +57,36 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div id="location-list" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {% for location in locations %}
-        <a href="{% url 'location_detail' novel.pk location.pk %}"
-            class="block bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:border-indigo-300 transition-colors">
-            {% if location.image %}
-            <img src="{{ location.image.url }}" alt="{{ location.name }}" class="h-48 w-full object-cover">
-            {% else %}
-            <div class="h-48 w-full bg-slate-100 flex items-center justify-center text-slate-400">
-                <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+        <div data-id="{{ location.pk }}"
+            class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+            <div class="location-drag-handle p-4 cursor-move">
+                <div class="flex items-start justify-between mb-0.5">
+                    <h3 class="text-sm font-bold text-slate-900 truncate">
+                        <a href="{% url 'location_detail' novel.pk location.pk %}" class="hover:text-indigo-600">{{ location.name }}</a>
+                    </h3>
+                    <svg class="flex-shrink-0 h-4 w-4 text-slate-300 ml-2" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M4 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8-7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                    </svg>
+                </div>
+                <p class="text-indigo-600 text-xs font-medium">{{ location.type|default:"No type" }}</p>
+                {% if location.image %}
+                <img src="{{ location.image.url }}" alt="{{ location.name }}" class="h-48 w-full object-cover mt-3 rounded-md">
+                {% else %}
+                <div class="h-48 w-full bg-slate-100 flex items-center justify-center text-slate-400 mt-3 rounded-md">
+                    <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-            <div class="p-6">
-                <h3 class="text-lg font-semibold text-slate-900">{{ location.name }}</h3>
-                <p class="text-indigo-600 text-xs font-medium user-content">
-                    {{ location.type|default:"No type" }}
-                </p>
-                <p class="text-slate-500 text-sm line-clamp-2 mt-1 user-content">
-                    {{ location.description|default:"No description" }}
-                </p>
-            </div>
-        </a>
+        </div>
         {% empty %}
-        <div
-            class="col-span-full bg-white shadow overflow-hidden sm:rounded-md border border-slate-200 p-12 text-center text-slate-500">
+        <div class="col-span-full bg-white shadow-sm overflow-hidden rounded-lg border border-slate-200 p-12 text-center text-slate-500">
             <h3 class="mt-2 text-sm font-medium text-slate-900">No locations yet</h3>
             <p class="mt-1 text-sm text-slate-500">Start by adding your first location.</p>
         </div>

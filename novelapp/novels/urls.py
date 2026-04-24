@@ -17,6 +17,7 @@ urlpatterns = [
     path('<int:novel_pk>/part/<int:part_pk>/delete/', views.part_delete_view, name='part_delete'),
     path('<int:novel_pk>/part/<int:part_pk>/unarchive/', views.part_unarchive_view, name='part_unarchive'),
     path('<int:novel_pk>/parts/archived/', views.archived_part_list_view, name='archived_part_list'),
+    path('<int:novel_pk>/parts/reorder/', views.part_reorder_view, name='part_reorder'),
     path('<int:novel_pk>/chapter/create/', views.chapter_create_view, name='chapter_create'),
     path('<int:novel_pk>/part/<int:part_pk>/chapter/create/', views.chapter_create_view, name='chapter_create_in_part'),
     path('<int:novel_pk>/chapter/<int:chapter_pk>/', views.chapter_detail_view, name='chapter_detail'),

@@ -721,6 +721,30 @@ def archived_chapter_list_view(request, novel_pk, part_pk=None):
     })
 
 @login_required
+def part_reorder_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            part_ids = data.get('part_ids', [])
+            parts = {str(p.pk): p for p in Part.objects.filter(novel=novel, archived=False).exclude(title='_default')}
+            valid_ids = [pid for pid in part_ids if str(pid) in parts]
+            with transaction.atomic():
+                # Step 1: move to negative temp values to avoid unique_together conflicts
+                for index, pid in enumerate(valid_ids):
+                    Part.objects.filter(pk=pid).update(order=-(index + 1))
+                # Step 2: assign final positive orders
+                for index, pid in enumerate(valid_ids):
+                    Part.objects.filter(pk=pid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return redirect('novel_detail', pk=novel_pk)
+
+
+@login_required
 def chapter_reorder_view(request, novel_pk):
     novel = get_object_or_404(Novel, pk=novel_pk, user=request.user)
     if request.method == 'POST':

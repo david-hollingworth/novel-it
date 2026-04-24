@@ -110,12 +110,13 @@ class Character(models.Model):
     personality = models.TextField(blank=True, help_text="Personality traits (markdown supported)")
     relationships = models.TextField(blank=True, help_text="Relationships with other characters (markdown supported)")
     image = models.ImageField(upload_to=character_image_path, blank=True, null=True, help_text="Character portrait or reference image")
+    order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     archived = models.BooleanField(default=False, help_text="Soft delete flag")
 
     class Meta:
-        ordering = ['last_name', 'first_name']
+        ordering = ['order', 'last_name', 'first_name']
         verbose_name = 'Character'
         verbose_name_plural = 'Characters'
 
@@ -147,12 +148,13 @@ class Location(models.Model):
     description = models.TextField(blank=True, help_text="Description of the location (markdown supported)")
     notes = models.TextField(blank=True, help_text="Additional notes about the location (markdown supported)")
     image = models.ImageField(upload_to=location_image_path, blank=True, null=True, help_text="Location image or map")
+    order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     archived = models.BooleanField(default=False, help_text="Soft delete flag")
 
     class Meta:
-        ordering = ['name']
+        ordering = ['order', 'name']
         verbose_name = 'Location'
         verbose_name_plural = 'Locations'
 
@@ -184,12 +186,13 @@ class Item(models.Model):
     description = models.TextField(blank=True, help_text="Description of the item (markdown supported)")
     notes = models.TextField(blank=True, help_text="Additional notes about the item (markdown supported)")
     image = models.ImageField(upload_to=item_image_path, blank=True, null=True, help_text="Item image or reference")
+    order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     archived = models.BooleanField(default=False, help_text="Soft delete flag")
 
     class Meta:
-        ordering = ['name']
+        ordering = ['order', 'name']
         verbose_name = 'Item'
         verbose_name_plural = 'Items'
 
