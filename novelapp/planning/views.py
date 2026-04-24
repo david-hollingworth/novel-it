@@ -528,6 +528,62 @@ def item_edit_view(request, novel_pk, pk):
     })
 
 
+# ─── Planning Entity Reorder Views ─────────────────────────────────────────
+
+@login_required
+def character_reorder_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            character_ids = data.get('character_ids', [])
+            valid_pks = set(novel.characters.filter(archived=False).values_list('pk', flat=True))
+            valid_ids = [int(cid) for cid in character_ids if int(cid) in valid_pks]
+            for index, cid in enumerate(valid_ids):
+                Character.objects.filter(pk=cid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+
+@login_required
+def location_reorder_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            location_ids = data.get('location_ids', [])
+            valid_pks = set(novel.locations.filter(archived=False).values_list('pk', flat=True))
+            valid_ids = [int(lid) for lid in location_ids if int(lid) in valid_pks]
+            for index, lid in enumerate(valid_ids):
+                Location.objects.filter(pk=lid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+
+@login_required
+def item_reorder_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            item_ids = data.get('item_ids', [])
+            valid_pks = set(novel.items.filter(archived=False).values_list('pk', flat=True))
+            valid_ids = [int(iid) for iid in item_ids if int(iid) in valid_pks]
+            for index, iid in enumerate(valid_ids):
+                Item.objects.filter(pk=iid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+
 # ─── Scene Occurrence Helper ────────────────────────────────────────────────
 
 def _get_scene_occurrences(entity):

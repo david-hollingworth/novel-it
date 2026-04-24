@@ -14,22 +14,23 @@
         <h3 class="text-sm font-bold text-slate-900 mb-1 truncate">
             <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" class="hover:text-indigo-600" @click.stop>{{ chapter.title }}</a>
         </h3>
-        {% if chapter.summary %}
-        <p class="text-slate-600 text-xs mb-3 line-clamp-2">{{ chapter.summary }}</p>
-        {% else %}
-        <p class="text-slate-400 text-xs mb-3 italic">No summary available.</p>
-        {% endif %}
+        <p class="text-slate-500 text-xs mb-3">{{ chapter.get_status_display }}</p>
         <div class="pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
             <span><span class="chapter-word-count">{{ chapter.word_count }}</span> words</span>
             <span class="chapter-scene-count">{{ chapter.get_scene_count }} scene{{ chapter.get_scene_count|pluralize }}</span>
         </div>
-        <div class="mt-3 flex space-x-2">
-            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}"
-                class="flex-1 text-center px-2 py-1 text-xs font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200"
-                @click.stop>View</a>
-            <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
-                class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300"
-                @click.stop>Edit</a>
+        <div class="mt-3 flex items-center justify-between">
+            <div class="flex space-x-2">
+                <a href="{% url 'chapter_edit' novel.pk chapter.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300"
+                    @click.stop>Edit</a>
+                <a href="{% url 'chapter_archive' novel.pk chapter.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300"
+                    @click.stop>Archive</a>
+                <a href="{% url 'chapter_delete' novel.pk chapter.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-red-600 bg-white rounded-md hover:text-red-700 border border-red-200 hover:border-red-400"
+                    @click.stop>Delete</a>
+            </div>
             <button @click="open = !open"
                 class="px-2 py-1 text-xs font-medium text-slate-500 bg-white rounded-md border border-slate-200 hover:border-indigo-300 hover:text-indigo-600"
                 :title="open ? 'Hide scenes' : 'Show scenes'" aria-label="Toggle scenes">
