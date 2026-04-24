@@ -3,7 +3,13 @@
 <div data-id="{{ part.pk }}"
     class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
 
-    <div class="p-4">
+    <div class="part-drag-handle p-4 cursor-move">
+        <div class="flex items-start justify-between mb-1">
+            <span class="part-order-label text-xs font-semibold text-indigo-600 uppercase tracking-wide">Part {{ part.order }}</span>
+            <svg class="flex-shrink-0 h-4 w-4 text-slate-300" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8-7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm0 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+            </svg>
+        </div>
         <h3 class="text-sm font-bold text-slate-900 mb-1 truncate">
             <a href="{% url 'part_detail' novel.pk part.pk %}" class="hover:text-indigo-600">{% if part.title == '_default' %}Untitled Part{% else %}{{ part.title }}{% endif %}</a>
         </h3>
@@ -16,11 +22,16 @@
             <span>{{ part.word_count }} words</span>
             <span>{{ part.get_chapter_count }} chapter{{ part.get_chapter_count|pluralize }}</span>
         </div>
-        <div class="mt-3 flex space-x-2">
-            <a href="{% url 'part_detail' novel.pk part.pk %}"
-                class="flex-1 text-center px-2 py-1 text-xs font-medium text-slate-700 bg-slate-50 rounded-md hover:bg-slate-100 border border-slate-200">View</a>
-            <a href="{% url 'part_edit' novel.pk part.pk %}"
-                class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
+        <div class="mt-3 flex items-center justify-between">
+            <div class="flex space-x-2">
+                <a href="{% url 'part_edit' novel.pk part.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Edit</a>
+                <a href="{% url 'part_archive' novel.pk part.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-slate-700 bg-white rounded-md hover:text-indigo-600 border border-slate-200 hover:border-indigo-300">Archive</a>
+                <a href="{% url 'part_delete' novel.pk part.pk %}"
+                    class="px-2 py-1 text-xs font-medium text-red-600 bg-white rounded-md hover:text-red-700 border border-red-200 hover:border-red-400">Delete</a>
+            </div>
+            {# Chevron for chapter reassignment goes here when implemented #}
         </div>
     </div>
 

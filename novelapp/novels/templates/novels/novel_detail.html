@@ -11,6 +11,32 @@
 
     document.addEventListener('DOMContentLoaded', function () {
 
+        // ── Part reordering ──────────────────────────────────────────────
+        var partList = document.getElementById('part-list');
+        if (partList) {
+            var partSortable = Sortable.create(partList, {
+                animation: 150,
+                ghostClass: 'bg-indigo-50',
+                handle: '.part-drag-handle',
+                onEnd: function (evt) {
+                    var order = partSortable.toArray();
+                    fetch("{% url 'part_reorder' novel.pk %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                        body: JSON.stringify({ part_ids: order })
+                    }).then(response => {
+                        if (!response.ok) console.error('Part reorder failed');
+                    }).catch(error => console.error('Error:', error));
+
+                    var items = partList.children;
+                    for (var i = 0; i < items.length; i++) {
+                        var span = items[i].querySelector('span.part-order-label');
+                        if (span) span.textContent = 'Part ' + (i + 1);
+                    }
+                }
+            });
+        }
+
         // ── Chapter reordering ───────────────────────────────────────────────
         var chapterList = document.getElementById('chapter-list');
         if (chapterList) {
