@@ -66,6 +66,8 @@
                     class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">Delete</a>
                 <a href="{% url 'scene_create' novel.pk chapter.pk %}"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Add Scene</a>
+                <a href="{% url 'archived_scene_list' novel.pk chapter.pk %}"
+                    class="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">Archived Scenes</a>
             </div>
         </div>
         <p class="text-slate-600 max-w-3xl user-content">{{ chapter.summary|default:"No summary provided." }}</p>
