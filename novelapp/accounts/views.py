@@ -12,10 +12,9 @@ def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Registration successful.")
-            return redirect('dashboard')
+            form.save()
+            messages.success(request, "Registration successful. Please log in.")
+            return redirect('login')
     else:
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
