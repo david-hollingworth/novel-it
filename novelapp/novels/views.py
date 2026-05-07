@@ -462,7 +462,9 @@ def scene_delete_view(request, novel_pk, chapter_pk, scene_pk):
     scene = get_object_or_404(Scene, pk=scene_pk, chapter__pk=chapter_pk, chapter__part__novel__pk=novel_pk, chapter__part__novel__user=request.user)
     if request.method == 'POST':
         title = scene.title
-        scene.delete()
+        chapter = scene.chapter
+        scene.delete()  # does not trigger Scene.save(), so cascade manually
+        chapter.update_word_count()  # cascades to part and novel
         messages.success(request, f"Scene '{title}' deleted permanently.")
         return redirect('chapter_detail', novel_pk=novel_pk, chapter_pk=chapter_pk)
     return render(request, 'novels/scene_confirm_delete.html', {
@@ -553,6 +555,7 @@ def chapter_archive_view(request, novel_pk, chapter_pk):
     if request.method == 'POST':
         chapter.archived = True
         chapter.save()
+        chapter.part.update_word_count()  # cascades to novel
         messages.success(request, f"Chapter '{chapter.title}' archived successfully.")
         if chapter.novel.parts_enabled:
             return redirect('part_detail', novel_pk=novel_pk, part_pk=chapter.part.pk)
@@ -696,12 +699,13 @@ def chapter_delete_view(request, novel_pk, chapter_pk):
     chapter = get_object_or_404(Chapter, pk=chapter_pk, part__novel__pk=novel_pk, part__novel__user=request.user)
     if request.method == 'POST':
         title = chapter.title
-        part_pk = chapter.part.pk
+        part = chapter.part
         parts_enabled = chapter.novel.parts_enabled
-        chapter.delete()
+        chapter.delete()  # cascades to scenes via FK CASCADE
+        part.update_word_count()  # cascades to novel
         messages.success(request, f"Chapter '{title}' deleted permanently.")
         if parts_enabled:
-            return redirect('part_detail', novel_pk=novel_pk, part_pk=part_pk)
+            return redirect('part_detail', novel_pk=novel_pk, part_pk=part.pk)
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/chapter_confirm_delete.html', {'chapter': chapter, 'novel': chapter.novel})
 
