@@ -88,6 +88,7 @@
                         } else {
                             updateChapterCounts(data.source_chapter_id, data.source_word_count, data.source_scene_count);
                             updateChapterCounts(data.target_chapter_id, data.target_word_count, data.target_scene_count);
+                            updateSceneCardUrls(sceneId, data.target_chapter_id);
                         }
                     }).catch(err => {
                         sourceList.insertBefore(evt.item, sourceList.children[evt.oldIndex] || null);
@@ -111,6 +112,17 @@
             var sc = card.querySelector('.chapter-scene-count');
             if (wc) wc.textContent = wordCount;
             if (sc) sc.textContent = sceneCount + ' scene' + (sceneCount !== 1 ? 's' : '');
+        }
+
+        function updateSceneCardUrls(sceneId, targetChapterId) {
+            var item = document.querySelector(`li[data-id="${sceneId}"]`);
+            if (!item) return;
+            item.querySelectorAll('a[href]').forEach(function (a) {
+                a.href = a.href.replace(
+                    /\/chapter\/\d+\//,
+                    '/chapter/' + targetChapterId + '/'
+                );
+            });
         }
     });
 </script>
