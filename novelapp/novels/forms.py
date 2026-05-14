@@ -49,40 +49,55 @@ class NovelForm(forms.ModelForm):
 class PartForm(forms.ModelForm):
     class Meta:
         model = Part
-        fields = ['title', 'summary', 'notes', 'status']
+        fields = ['title', 'description', 'notes', 'status']
+        labels = {
+            'title': 'Name',
+        }
         widgets = {
             'title': forms.TextInput(attrs={'class': CSS_INPUT}),
-            'summary': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
             'notes': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
             'status': forms.Select(attrs={'class': CSS_SELECT}),
         }
         error_messages = {
-            'title': {'required': 'Title is required'},
+            'title': {'required': 'Name is required'},
         }
 
 
 class ChapterForm(forms.ModelForm):
     class Meta:
         model = Chapter
-        fields = ['title', 'summary']
+        fields = ['title', 'description', 'notes', 'status']
+        labels = {
+            'title': 'Name',
+        }
         widgets = {
             'title': forms.TextInput(attrs={'class': CSS_INPUT}),
-            'summary': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
+            'status': forms.Select(attrs={'class': CSS_SELECT}),
+        }
+        error_messages = {
+            'title': {'required': 'Name is required'},
         }
 
 
 class SceneForm(forms.ModelForm):
     class Meta:
         model = Scene
-        fields = ['title', 'notes', 'status']
+        fields = ['title', 'description', 'notes', 'status']
+        labels = {
+            'title': 'Name',
+        }
         widgets = {
             'title': forms.TextInput(attrs={'class': CSS_INPUT}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
             'notes': forms.Textarea(attrs={'rows': 3, 'class': CSS_TEXTAREA}),
             'status': forms.Select(attrs={'class': CSS_SELECT}),
         }
         error_messages = {
             'title': {
-                'required': 'Title is required',
+                'required': 'Name is required',
             },
         }
 
