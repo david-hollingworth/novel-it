@@ -126,7 +126,7 @@ class Part(models.Model):
     order = models.IntegerField(default=0)
 
     # Base entity: Description (FEAT-0004)
-    summary = models.TextField(blank=True)
+    description = models.TextField(blank=True)
 
     # Base entity: Notes (FEAT-0004)
     notes = models.TextField(blank=True)
@@ -194,7 +194,7 @@ class Chapter(models.Model):
     order = models.IntegerField(default=0, help_text="Display order within the part")
 
     # Base entity: Description (FEAT-0004)
-    summary = models.TextField(blank=True, help_text="Chapter summary")
+    description = models.TextField(blank=True, help_text="Chapter description")
 
     # Base entity: Notes (FEAT-0004)
     notes = models.TextField(blank=True)
@@ -270,8 +270,11 @@ class Scene(models.Model):
     # Scene-specific: the actual writing content
     content = models.TextField(blank=True, help_text="Markdown content of the scene")
 
+    # Base entity: Description (FEAT-0004)
+    description = models.TextField(blank=True, help_text="Scene description")
+
     # Base entity: Notes (FEAT-0004)
-    notes = models.TextField(blank=True, help_text="Scene notes or summary")
+    notes = models.TextField(blank=True, help_text="Scene notes")
 
     # Scene-specific: calculated from content; read-only in edit mode (FEAT-0224)
     word_count = models.IntegerField(default=0, help_text="Word count of content")

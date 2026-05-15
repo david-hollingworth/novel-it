@@ -89,27 +89,51 @@ class Character(models.Model):
     Characters are scoped to a specific novel.
     """
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='characters')
+
+    # Base entity: Name — labelled Full Name for characters (FEAT-0403)
     fullname = models.CharField(max_length=255)
-    nickname = models.CharField(max_length=255, blank=True, null=True)
+
+    # Name breakdown fields (FEAT-0403)
     first_name = models.CharField(max_length=255, blank=True, null=True)
+    middle_name = models.CharField(max_length=255, blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
+    nickname = models.CharField(max_length=255, blank=True, null=True)
     aliases = models.CharField(max_length=255, blank=True, null=True)
+
+    # Biographical fields (FEAT-0403)
     gender = models.CharField(max_length=255, blank=True, null=True)
     age = models.IntegerField(blank=True, null=True)
+
+    # Role in story — FK to user-definable CharacterRole (FEAT-0403)
     role = models.ForeignKey(
-        CharacterRole, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        CharacterRole,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='characters',
         help_text="Character's role in the story"
     )
-    description = models.TextField(blank=True, help_text="Physical description, personality, background (markdown supported)")
-    notes = models.TextField(blank=True, help_text="Additional notes about the character (markdown supported)")
+
+    # Character-specific narrative fields (FEAT-0403)
+    physical_description = models.TextField(blank=True, help_text="Physical description of the character (markdown supported)")
     interview = models.TextField(blank=True, help_text="Interview with the character (markdown supported)")
-    personality = models.TextField(blank=True, help_text="Personality traits (markdown supported)")
-    relationships = models.TextField(blank=True, help_text="Relationships with other characters (markdown supported)")
+    the_lie_they_believe = models.TextField(blank=True, help_text="The lie the character believes about themselves or the world (markdown supported)")
+    goals_and_motivations = models.TextField(blank=True, help_text="Goals and motivations of the character (markdown supported)")
+    fears_and_weaknesses = models.TextField(blank=True, help_text="Fears and weaknesses of the character (markdown supported)")
+    arc_in_story = models.TextField(blank=True, help_text="The character's arc in the story (markdown supported)")
+
+    # Character image (FEAT-0403)
     image = models.ImageField(upload_to=character_image_path, blank=True, null=True, help_text="Character portrait or reference image")
+
+    # Base entity: Description (FEAT-0004)
+    description = models.TextField(blank=True, help_text="General description of the character (markdown supported)")
+
+    # Base entity: Notes (FEAT-0004)
+    notes = models.TextField(blank=True, help_text="Additional notes about the character (markdown supported)")
+
+    # NO LONGER IN USE — retained to avoid data loss pending review
+    personality = models.TextField(blank=True, help_text="[No longer in use] Personality traits")
+    relationships = models.TextField(blank=True, help_text="[No longer in use] Free-text relationships field, superseded by the Relationship model")
     order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -174,7 +198,11 @@ class Item(models.Model):
     Items are scoped to a specific novel.
     """
     novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='items')
+
+    # Base entity: Name (FEAT-0602)
     name = models.CharField(max_length=255)
+
+    # Item type — FK to user-definable ItemType (FEAT-0602)
     type = models.ForeignKey(
         ItemType,
         on_delete=models.SET_NULL,
@@ -183,8 +211,18 @@ class Item(models.Model):
         related_name='items',
         help_text="Type of item"
     )
+
+    # Item-specific narrative fields (FEAT-0602)
+    history = models.TextField(blank=True, help_text="History of the item (markdown supported)")
+    properties_and_abilities = models.TextField(blank=True, help_text="Properties and abilities of the item (markdown supported)")
+
+    # Base entity: Description (FEAT-0004)
     description = models.TextField(blank=True, help_text="Description of the item (markdown supported)")
+
+    # Base entity: Notes (FEAT-0004)
     notes = models.TextField(blank=True, help_text="Additional notes about the item (markdown supported)")
+
+    # Item image (FEAT-0602)
     image = models.ImageField(upload_to=item_image_path, blank=True, null=True, help_text="Item image or reference")
     order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
