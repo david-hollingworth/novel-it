@@ -8,7 +8,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
         <div class="flex items-center space-x-4">
-            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" class="text-slate-400 hover:text-indigo-600">
+            <a href="{% url 'chapter_detail' novel.pk chapter.pk %}" data-nav-guard class="text-slate-400 hover:text-indigo-600">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -32,13 +32,13 @@
                 <span id="word-count">{{ scene.word_count }}</span> words
             </div>
             {% if prev_scene %}
-            <a href="{% url 'scene_editor' novel.pk chapter.pk prev_scene.pk %}"
+            <a href="{% url 'scene_editor' novel.pk chapter.pk prev_scene.pk %}" data-nav-guard
                class="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50">
                 ← Previous
             </a>
             {% endif %}
             {% if next_scene %}
-            <a href="{% url 'scene_editor' novel.pk chapter.pk next_scene.pk %}"
+            <a href="{% url 'scene_editor' novel.pk chapter.pk next_scene.pk %}" data-nav-guard
                class="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50">
                 Next →
             </a>
@@ -131,14 +131,11 @@
     });
 
     // Wire up all in-page navigation anchors
-    // Selector covers: back arrow, breadcrumb links, prev/next scene buttons
+    // data-nav-guard: back arrow, prev/next scene buttons
+    // nav[aria-label="Breadcrumb"] a: breadcrumb links
     var navAnchors = document.querySelectorAll(
-        '.ni-nav-link, ' +
-        'nav[aria-label="Breadcrumb"] a, ' +
-        'a[href*="chapter_detail"], ' +
-        'a[href*="novel_detail"], ' +
-        'a[href*="novel_list"], ' +
-        'a[href*="scene_editor"]'
+        '[data-nav-guard], '
+        + 'nav[aria-label="Breadcrumb"] a'
     );
 
     navAnchors.forEach(function (a) {
