@@ -1,6 +1,25 @@
 from django import forms
 from .models import Character, CharacterRole, Location, LocationType, Item, ItemType
 
+ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png']
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
+
+def validate_image(image):
+    """Raise ValidationError if the uploaded image is not a .jpg/.jpeg or .png."""
+    if image:
+        import os
+        ext = os.path.splitext(image.name)[1].lower()
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            raise forms.ValidationError(
+                'Only .jpg, .jpeg, and .png images are allowed.'
+            )
+        if hasattr(image, 'content_type') and image.content_type not in ALLOWED_IMAGE_TYPES:
+            raise forms.ValidationError(
+                'Only .jpg, .jpeg, and .png images are allowed.'
+            )
+    return image
+
 class CharacterForm(forms.ModelForm):
     class Meta:
         model = Character
@@ -61,6 +80,9 @@ class CharacterForm(forms.ModelForm):
         if novel:
             self.fields['role'].queryset = CharacterRole.objects.filter(novel=novel)
 
+    def clean_image(self):
+        return validate_image(self.cleaned_data.get('image'))
+
 
 class LocationForm(forms.ModelForm):
     class Meta:
@@ -79,6 +101,10 @@ class LocationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if novel:
             self.fields['type'].queryset = LocationType.objects.filter(novel=novel)
+
+    def clean_image(self):
+        return validate_image(self.cleaned_data.get('image'))
+
 
 class ItemForm(forms.ModelForm):
     class Meta:
@@ -111,3 +137,6 @@ class ItemForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if novel:
             self.fields['type'].queryset = ItemType.objects.filter(novel=novel)
+
+    def clean_image(self):
+        return validate_image(self.cleaned_data.get('image'))
