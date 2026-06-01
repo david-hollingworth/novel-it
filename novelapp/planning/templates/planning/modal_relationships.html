@@ -18,7 +18,7 @@
     <div class="space-y-2">
         {% for item in relationships %}
         <div class="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden"
-             x-data="{ editing: false, label: '{{ item.display_label|escapejs }}', reverseLabel: '{{ item.rel.reverse_label|escapejs }}', notes: '{{ item.rel.notes|escapejs }}' }">
+             x-data="{ editing: false, label: '{{ item.rel.label|escapejs }}', reverseLabel: '{{ item.rel.reverse_label|escapejs }}', notes: '{{ item.rel.notes|escapejs }}' }">
 
             <!-- Row view -->
             <div class="flex items-center justify-between px-3 py-2" x-show="!editing">
