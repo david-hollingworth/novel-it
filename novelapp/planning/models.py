@@ -19,6 +19,11 @@ def item_image_path(instance, filename):
     return f'items/{instance.novel.id}/{filename}'
 
 
+def world_building_image_path(instance, filename):
+    """Generate upload path for world building item images."""
+    return f'world_building/{instance.novel.id}/{filename}'
+
+
 # Choice Models - these allow users to define their own categories
 
 class CharacterRole(models.Model):
@@ -81,6 +86,26 @@ class ItemType(models.Model):
         return self.name
 
 
+class WorldBuildingType(models.Model):
+    """
+    User-definable world building item types.
+    Each novel can have its own set of world building types.
+    """
+    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='world_building_types')
+    name = models.CharField(max_length=100)
+    order = models.IntegerField(default=0, help_text="Display order")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'World Building Type'
+        verbose_name_plural = 'World Building Types'
+        unique_together = ['novel', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 # Main Planning Models
 
 class Character(models.Model):
@@ -115,21 +140,21 @@ class Character(models.Model):
     )
 
     # Character-specific narrative fields (FEAT-0403)
-    physical_description = models.TextField(blank=True, help_text="Physical description of the character (markdown supported)")
-    interview = models.TextField(blank=True, help_text="Interview with the character (markdown supported)")
-    the_lie_they_believe = models.TextField(blank=True, help_text="The lie the character believes about themselves or the world (markdown supported)")
-    goals_and_motivations = models.TextField(blank=True, help_text="Goals and motivations of the character (markdown supported)")
-    fears_and_weaknesses = models.TextField(blank=True, help_text="Fears and weaknesses of the character (markdown supported)")
-    arc_in_story = models.TextField(blank=True, help_text="The character's arc in the story (markdown supported)")
+    physical_description = models.TextField(blank=True, help_text="Physical description of the character")
+    interview = models.TextField(blank=True, help_text="Interview with the character")
+    the_lie_they_believe = models.TextField(blank=True, help_text="The lie the character believes about themselves or the world")
+    goals_and_motivations = models.TextField(blank=True, help_text="Goals and motivations of the character")
+    fears_and_weaknesses = models.TextField(blank=True, help_text="Fears and weaknesses of the character")
+    arc_in_story = models.TextField(blank=True, help_text="The character's arc in the story")
 
     # Character image (FEAT-0403)
     image = models.ImageField(upload_to=character_image_path, blank=True, null=True, help_text="Character portrait or reference image")
 
     # Base entity: Description (FEAT-0004)
-    description = models.TextField(blank=True, help_text="General description of the character (markdown supported)")
+    description = models.TextField(blank=True, help_text="General description of the character")
 
     # Base entity: Notes (FEAT-0004)
-    notes = models.TextField(blank=True, help_text="Additional notes about the character (markdown supported)")
+    notes = models.TextField(blank=True, help_text="Additional notes about the character")
 
     # NO LONGER IN USE — retained to avoid data loss pending review
     personality = models.TextField(blank=True, help_text="[No longer in use] Personality traits")
@@ -169,8 +194,8 @@ class Location(models.Model):
         related_name='locations',
         help_text="Type of location"
     )
-    description = models.TextField(blank=True, help_text="Description of the location (markdown supported)")
-    notes = models.TextField(blank=True, help_text="Additional notes about the location (markdown supported)")
+    description = models.TextField(blank=True, help_text="Description of the location")
+    notes = models.TextField(blank=True, help_text="Additional notes about the location")
     image = models.ImageField(upload_to=location_image_path, blank=True, null=True, help_text="Location image or map")
     order = models.IntegerField(default=0, help_text="Display order within the novel")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -213,14 +238,14 @@ class Item(models.Model):
     )
 
     # Item-specific narrative fields (FEAT-0602)
-    history = models.TextField(blank=True, help_text="History of the item (markdown supported)")
-    properties_and_abilities = models.TextField(blank=True, help_text="Properties and abilities of the item (markdown supported)")
+    history = models.TextField(blank=True, help_text="History of the item")
+    properties_and_abilities = models.TextField(blank=True, help_text="Properties and abilities of the item")
 
     # Base entity: Description (FEAT-0004)
-    description = models.TextField(blank=True, help_text="Description of the item (markdown supported)")
+    description = models.TextField(blank=True, help_text="Description of the item")
 
     # Base entity: Notes (FEAT-0004)
-    notes = models.TextField(blank=True, help_text="Additional notes about the item (markdown supported)")
+    notes = models.TextField(blank=True, help_text="Additional notes about the item")
 
     # Item image (FEAT-0602)
     image = models.ImageField(upload_to=item_image_path, blank=True, null=True, help_text="Item image or reference")
@@ -241,6 +266,55 @@ class Item(models.Model):
 
     def get_novel_title(self):
         """Return the title of the novel this item belongs to."""
+        return self.novel.title
+
+
+class WorldBuilding(models.Model):
+    """
+    A world building item in a novel.
+    World building items are scoped to a specific novel and capture the
+    rules, history, and cultural fabric of the fictional world.
+    """
+    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='world_building_items')
+
+    # Base entity: Name (FEAT-0702)
+    name = models.CharField(max_length=255)
+
+    # World building type — FK to user-definable WorldBuildingType (FEAT-0702)
+    type = models.ForeignKey(
+        WorldBuildingType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='world_building_items',
+        help_text="Type of world building item"
+    )
+
+    # Base entity: Description (FEAT-0004)
+    description = models.TextField(blank=True, help_text="Description of the world building item")
+
+    # Base entity: Notes (FEAT-0004)
+    notes = models.TextField(blank=True, help_text="Additional notes about the world building item")
+
+    # World building item image (FEAT-0702)
+    image = models.ImageField(upload_to=world_building_image_path, blank=True, null=True, help_text="Image for the world building item")
+    order = models.IntegerField(default=0, help_text="Display order within the novel")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    archived = models.BooleanField(default=False, help_text="Soft delete flag")
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'World Building Item'
+        verbose_name_plural = 'World Building Items'
+
+    def __str__(self):
+        if self.type:
+            return f"{self.name} ({self.type.name})"
+        return self.name
+
+    def get_novel_title(self):
+        """Return the title of the novel this world building item belongs to."""
         return self.novel.title
 
 

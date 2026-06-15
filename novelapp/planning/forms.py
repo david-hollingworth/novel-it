@@ -1,5 +1,5 @@
 from django import forms
-from .models import Character, CharacterRole, Location, LocationType, Item, ItemType
+from .models import Character, CharacterRole, Location, LocationType, Item, ItemType, WorldBuilding, WorldBuildingType
 
 ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png']
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
@@ -79,6 +79,38 @@ class CharacterForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if novel:
             self.fields['role'].queryset = CharacterRole.objects.filter(novel=novel)
+
+    def clean_image(self):
+        return validate_image(self.cleaned_data.get('image'))
+
+
+class WorldBuildingForm(forms.ModelForm):
+    class Meta:
+        model = WorldBuilding
+        fields = ['name', 'type', 'description', 'notes', 'image']
+        labels = {
+            'name': 'Name',
+            'type': 'Type',
+            'description': 'Description',
+            'notes': 'Notes',
+            'image': 'Image',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'mt-1 block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500'}),
+            'type': forms.Select(attrs={'class': 'mt-1 block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'mt-1 block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500'}),
+            'notes': forms.Textarea(attrs={'rows': 4, 'class': 'mt-1 block w-full border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500'}),
+            'image': forms.FileInput(attrs={'class': 'mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100'}),
+        }
+        error_messages = {
+            'name': {'required': 'Name is required'},
+        }
+
+    def __init__(self, *args, **kwargs):
+        novel = kwargs.pop('novel', None)
+        super().__init__(*args, **kwargs)
+        if novel:
+            self.fields['type'].queryset = WorldBuildingType.objects.filter(novel=novel)
 
     def clean_image(self):
         return validate_image(self.cleaned_data.get('image'))
