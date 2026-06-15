@@ -47,6 +47,13 @@
                         class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
                         {{ item.other }}
                     </button>
+                    {% elif item.other_type == 'world_building' %}
+                    <button type="button"
+                        hx-get="{% url 'modal_world_building_edit' novel.pk item.other.pk %}"
+                        hx-target="#planning-modal-content"
+                        class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">
+                        {{ item.other }}
+                    </button>
                     {% endif %}
                     {% if item.rel.notes %}
                     <span class="text-slate-400 text-xs italic">— {{ item.rel.notes }}</span>
@@ -188,6 +195,7 @@
                 <option value="character">Character</option>
                 <option value="location">Location</option>
                 <option value="item">Item</option>
+                <option value="world_building">World Building</option>
             </select>
         </div>
 

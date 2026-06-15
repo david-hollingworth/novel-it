@@ -15,6 +15,10 @@ urlpatterns = [
     path('novel/<int:novel_pk>/modal/items/create/', views.modal_item_create, name='modal_item_create'),
     path('novel/<int:novel_pk>/modal/items/<int:pk>/', views.modal_item_detail, name='modal_item_detail'),
     path('novel/<int:novel_pk>/modal/items/<int:pk>/edit/', views.modal_item_edit, name='modal_item_edit'),
+    path('novel/<int:novel_pk>/modal/world-building/', views.modal_world_building_list, name='modal_world_building_list'),
+    path('novel/<int:novel_pk>/modal/world-building/create/', views.modal_world_building_create, name='modal_world_building_create'),
+    path('novel/<int:novel_pk>/modal/world-building/<int:pk>/', views.modal_world_building_detail, name='modal_world_building_detail'),
+    path('novel/<int:novel_pk>/modal/world-building/<int:pk>/edit/', views.modal_world_building_edit, name='modal_world_building_edit'),
 
     # Characters
     path('novel/<int:novel_pk>/characters/', views.character_list_view, name='character_list'),
@@ -36,6 +40,7 @@ urlpatterns = [
     path('novel/<int:novel_pk>/modal/manage/location-types/', views.modal_manage_location_types, name='modal_manage_location_types'),
     path('novel/<int:novel_pk>/modal/manage/item-types/', views.modal_manage_item_types, name='modal_manage_item_types'),
     path('novel/<int:novel_pk>/modal/manage/character-roles/', views.modal_manage_character_roles, name='modal_manage_character_roles'),
+    path('novel/<int:novel_pk>/modal/manage/world-building-types/', views.modal_manage_world_building_types, name='modal_manage_world_building_types'),
     path('novel/<int:novel_pk>/modal/type-options/<str:type_model>/', views.modal_type_options, name='modal_type_options'),
 
     # Relationships
@@ -52,4 +57,12 @@ urlpatterns = [
     path('novel/<int:novel_pk>/items/<int:pk>/', views.item_detail_view, name='item_detail'),
     path('novel/<int:novel_pk>/items/<int:pk>/edit/', views.item_edit_view, name='item_edit'),
     path('novel/<int:novel_pk>/items/types/', views.item_type_list_view, name='item_type_list'),
+
+    # World Building
+    path('novel/<int:novel_pk>/world-building/', views.world_building_list_view, name='world_building_list'),
+    path('novel/<int:novel_pk>/world-building/reorder/', views.world_building_reorder_view, name='world_building_reorder'),
+    path('novel/<int:novel_pk>/world-building/create/', views.world_building_create_view, name='world_building_create'),
+    path('novel/<int:novel_pk>/world-building/<int:pk>/', views.world_building_detail_view, name='world_building_detail'),
+    path('novel/<int:novel_pk>/world-building/<int:pk>/edit/', views.world_building_edit_view, name='world_building_edit'),
+    path('novel/<int:novel_pk>/world-building/types/', views.world_building_type_list_view, name='world_building_type_list'),
 ]

@@ -6,7 +6,7 @@ On each scene save, scan the text for known character/location/item names
 """
 import re
 from django.contrib.contenttypes.models import ContentType
-from .models import Character, Location, Item, SceneEntity
+from .models import Character, Location, Item, WorldBuilding, SceneEntity
 
 
 def _name_variants(entity):
@@ -66,16 +66,20 @@ def scan_scene_entities(scene):
     locations = list(novel.locations.filter(archived=False))
     items = list(novel.items.filter(archived=False))
 
+    world_building_items = list(novel.world_building_items.filter(archived=False))
+
     ct_char = ContentType.objects.get_for_model(Character)
     ct_loc = ContentType.objects.get_for_model(Location)
     ct_item = ContentType.objects.get_for_model(Item)
+    ct_wb = ContentType.objects.get_for_model(WorldBuilding)
 
     # Build (content_type, object_id, mention_count) for everything found
     found = []
     for entity, ct in (
         [(c, ct_char) for c in characters] +
         [(l, ct_loc) for l in locations] +
-        [(i, ct_item) for i in items]
+        [(i, ct_item) for i in items] +
+        [(w, ct_wb) for w in world_building_items]
     ):
         variants = _name_variants(entity)
         count = _count_mentions(content, variants)

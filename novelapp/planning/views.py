@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
-from .models import Character, CharacterRole, Location, LocationType, Item, ItemType, Relationship, RelationshipType
-from .forms import CharacterForm, LocationForm, ItemForm
+from .models import Character, CharacterRole, Location, LocationType, Item, ItemType, Relationship, RelationshipType, WorldBuilding, WorldBuildingType
+from .forms import CharacterForm, LocationForm, ItemForm, WorldBuildingForm
 from novels.models import Novel
 from django.contrib import messages
 
@@ -353,6 +353,8 @@ def modal_type_options(request, novel_pk, type_model):
         options = novel.item_types.all()
     elif type_model == 'character':
         options = novel.character_roles.all()
+    elif type_model == 'world_building':
+        options = novel.world_building_types.all()
     else:
         options = []
     return render(request, 'planning/modal_type_options.html', {'options': options})
@@ -602,7 +604,7 @@ def _get_scene_occurrences(entity):
 
 def _get_entity(novel, entity_type, entity_id):
     """Return the entity object and its ContentType for a given type string and id."""
-    model_map = {'character': Character, 'location': Location, 'item': Item}
+    model_map = {'character': Character, 'location': Location, 'item': Item, 'world_building': WorldBuilding}
     model = model_map.get(entity_type)
     if not model:
         return None, None
@@ -613,15 +615,16 @@ def _get_entity(novel, entity_type, entity_id):
 
 # Map model classes to their type string
 _MODEL_TYPE_MAP = {
-    'character': 'character',
-    'location': 'location',
-    'item': 'item',
+    Character: 'character',
+    Location: 'location',
+    Item: 'item',
+    WorldBuilding: 'world_building',
 }
 
 
 def _entity_type_str(obj):
-    """Return 'character', 'location', or 'item' for a given entity object."""
-    return obj.__class__.__name__.lower()
+    """Return the entity type string for a given entity object."""
+    return _MODEL_TYPE_MAP.get(obj.__class__, obj.__class__.__name__.lower())
 
 
 def _get_relationships_for_entity(entity):
@@ -682,6 +685,7 @@ def relationship_add(request, novel_pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'all_world_building': novel.world_building_items.filter(archived=False),
     })
 
 
@@ -715,6 +719,7 @@ def relationship_edit(request, novel_pk, pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'all_world_building': novel.world_building_items.filter(archived=False),
     })
 
 
@@ -741,6 +746,7 @@ def relationship_delete(request, novel_pk, pk):
         'all_characters': novel.characters.filter(archived=False),
         'all_locations': novel.locations.filter(archived=False),
         'all_items': novel.items.filter(archived=False),
+        'all_world_building': novel.world_building_items.filter(archived=False),
     })
 
 
@@ -779,4 +785,206 @@ def entity_search(request, novel_pk):
     elif entity_type == 'item':
         qs = novel.items.filter(archived=False, name__icontains=q)[:10]
         results = [{'id': i.pk, 'name': i.name} for i in qs]
+    elif entity_type == 'world_building':
+        qs = novel.world_building_items.filter(archived=False, name__icontains=q)[:10]
+        results = [{'id': w.pk, 'name': w.name} for w in qs]
     return JsonResponse({'results': results})
+
+
+# ─── World Building Views ────────────────────────────────────────────────────
+
+@login_required
+def world_building_list_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    world_building_items = novel.world_building_items.filter(archived=False)
+    return render(request, 'planning/world_building_list.html', {'novel': novel, 'world_building_items': world_building_items})
+
+
+@login_required
+def world_building_detail_view(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(WorldBuilding, pk=pk, novel=novel, archived=False)
+    return render(request, 'planning/world_building_detail.html', {'novel': novel, 'item': item})
+
+
+@login_required
+def world_building_create_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = WorldBuildingForm(request.POST, request.FILES, novel=novel)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.novel = novel
+            item.save()
+            messages.success(request, f"World building item '{item.name}' created.")
+            return redirect('world_building_list', novel_pk=novel.pk)
+    else:
+        form = WorldBuildingForm(novel=novel)
+    return render(request, 'planning/world_building_form.html', {'novel': novel, 'form': form})
+
+
+@login_required
+def world_building_edit_view(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(WorldBuilding, pk=pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = WorldBuildingForm(request.POST, request.FILES, instance=item, novel=novel)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"World building item '{item.name}' updated.")
+            return redirect('world_building_detail', novel_pk=novel.pk, pk=item.pk)
+    else:
+        form = WorldBuildingForm(instance=item, novel=novel)
+    return render(request, 'planning/world_building_form.html', {
+        'novel': novel,
+        'form': form,
+        'item': item,
+        'is_edit': True,
+    })
+
+
+@login_required
+def world_building_reorder_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            world_building_ids = data.get('world_building_ids', [])
+            valid_pks = set(novel.world_building_items.filter(archived=False).values_list('pk', flat=True))
+            valid_ids = [int(wid) for wid in world_building_ids if int(wid) in valid_pks]
+            for index, wid in enumerate(valid_ids):
+                WorldBuilding.objects.filter(pk=wid).update(order=index + 1)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+
+@login_required
+def world_building_type_list_view(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    types = novel.world_building_types.all()
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                WorldBuildingType.objects.get_or_create(novel=novel, name=name)
+                messages.success(request, f"Type '{name}' added.")
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                wt = get_object_or_404(WorldBuildingType, pk=cat_id, novel=novel)
+                wt.name = name
+                wt.save()
+                messages.success(request, f"Type renamed to '{name}'.")
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                wt = get_object_or_404(WorldBuildingType, pk=cat_id, novel=novel)
+                wt.delete()
+                messages.success(request, "Type deleted.")
+        return redirect('world_building_type_list', novel_pk=novel.pk)
+    return render(request, 'planning/category_list.html', {
+        'novel': novel,
+        'categories': types,
+        'title': 'World Building Types',
+        'back_url': 'world_building_list',
+    })
+
+
+@login_required
+def modal_world_building_list(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    world_building_items = novel.world_building_items.filter(archived=False)
+    return render(request, 'planning/modal_world_building_list.html', {'novel': novel, 'world_building_items': world_building_items})
+
+
+@login_required
+def modal_world_building_detail(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(WorldBuilding, pk=pk, novel=novel, archived=False)
+    return render(request, 'planning/modal_world_building_detail.html', {
+        'novel': novel,
+        'item': item,
+        'relationships': _get_relationships_for_entity(item),
+        'scene_occurrences': _get_scene_occurrences(item),
+    })
+
+
+@login_required
+def modal_world_building_create(request, novel_pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        form = WorldBuildingForm(request.POST, request.FILES, novel=novel)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.novel = novel
+            item.save()
+            world_building_items = novel.world_building_items.filter(archived=False)
+            return render(request, 'planning/modal_world_building_list.html', {'novel': novel, 'world_building_items': world_building_items})
+    else:
+        form = WorldBuildingForm(novel=novel)
+    return render(request, 'planning/modal_world_building_form.html', {'novel': novel, 'form': form})
+
+
+@login_required
+def modal_world_building_edit(request, novel_pk, pk):
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    item = get_object_or_404(WorldBuilding, pk=pk, novel=novel, archived=False)
+    if request.method == 'POST':
+        form = WorldBuildingForm(request.POST, request.FILES, instance=item, novel=novel)
+        if form.is_valid():
+            form.save()
+            world_building_items = novel.world_building_items.filter(archived=False)
+            return render(request, 'planning/modal_world_building_list.html', {'novel': novel, 'world_building_items': world_building_items})
+    else:
+        form = WorldBuildingForm(instance=item, novel=novel)
+    return render(request, 'planning/modal_world_building_form.html', {
+        'novel': novel,
+        'form': form,
+        'item': item,
+        'entity': item,
+        'entity_type': 'world_building',
+        'relationships': _get_relationships_for_entity(item),
+        'relationship_types': novel.relationship_types.all(),
+        'all_characters': novel.characters.filter(archived=False),
+        'all_locations': novel.locations.filter(archived=False),
+        'all_items': novel.items.filter(archived=False),
+        'all_world_building': novel.world_building_items.filter(archived=False),
+        'scene_occurrences': _get_scene_occurrences(item),
+    })
+
+
+@login_required
+def modal_manage_world_building_types(request, novel_pk):
+    """HTMX fragment for managing world building types inline within the world building edit modal."""
+    from django.urls import reverse
+    novel = get_object_or_404(Novel, pk=novel_pk, user=request.user, archived=False)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            if name:
+                WorldBuildingType.objects.get_or_create(novel=novel, name=name)
+        elif action == 'rename':
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            if cat_id and name:
+                wt = get_object_or_404(WorldBuildingType, pk=cat_id, novel=novel)
+                wt.name = name
+                wt.save()
+        elif action == 'delete':
+            cat_id = request.POST.get('category_id')
+            if cat_id:
+                wt = get_object_or_404(WorldBuildingType, pk=cat_id, novel=novel)
+                wt.delete()
+    types = novel.world_building_types.all()
+    return render(request, 'planning/modal_manage_types.html', {
+        'novel': novel,
+        'types': types,
+        'manage_url': reverse('modal_manage_world_building_types', args=[novel_pk]),
+        'field_id': 'id_type',
+    })
