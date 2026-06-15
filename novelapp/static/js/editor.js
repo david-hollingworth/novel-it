@@ -18,6 +18,9 @@
  *   // editor.save()      → programmatically trigger a save
  */
 function initEditor(options = {}) {
+    // Configure marked to treat single newlines as line breaks, matching
+    // the natural writing style of prose fiction authors (GH issue fix)
+    marked.use({ breaks: true });
     const {
         elementId,
         wordCountId   = null,
