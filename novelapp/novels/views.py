@@ -611,9 +611,17 @@ def scene_move_view(request, novel_pk, scene_pk):
 
             # Close the gap left in the source chapter
             # (avoids sparse order values and keeps unique_together clean)
-            source_chapter.scenes.filter(
+            #source_chapter.scenes.filter(
+            #    archived=False, order__gt=old_order
+            #).update(order=F('order') - 1)
+
+            gap_scenes = list(source_chapter.scenes.filter(
                 archived=False, order__gt=old_order
-            ).update(order=F('order') - 1)
+            ).order_by('order'))
+            for s in gap_scenes:
+                Scene.objects.filter(pk=s.pk).update(order=-(s.order))
+            for s in gap_scenes:
+                Scene.objects.filter(pk=s.pk).update(order=s.order - 1)
 
             # Recalculate word counts on both chapters (each also updates novel)
             source_chapter.update_word_count()
