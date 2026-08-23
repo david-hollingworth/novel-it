@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
-from .models import Novel, Chapter, Scene
+from .models import Novel, Part, Chapter, Scene
 
 class NovelScopingTests(TestCase):
     def setUp(self):
@@ -30,7 +30,11 @@ class WordCountTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='pass')
         self.novel = Novel.objects.create(user=self.user, title='Test Novel')
-        self.chapter = Chapter.objects.create(novel=self.novel, title='Chapter 1', order=1)
+        # Chapter has no direct FK to Novel -- it hangs off Part. Chapter.novel
+        # is a derived read-only property (part.novel), so a Part has to exist
+        # first even though parts_enabled is off for this novel.
+        self.part = Part.objects.create(novel=self.novel, title='Part 1', order=1)
+        self.chapter = Chapter.objects.create(part=self.part, title='Chapter 1', order=1)
         self.scene = Scene.objects.create(chapter=self.chapter, title='Scene 1', order=1)
 
     def test_word_count_calculation(self):
