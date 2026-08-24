@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from novels.models import Novel
 from .models import Character, Location, Item
 
+# Cross-user data isolation is enforced here but not yet documented as a
+# formal requirement -- see issue #136.
 class PlanningScopingTests(TestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(username='user1', password='pass1')
