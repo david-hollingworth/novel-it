@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from .models import Novel, Part, Chapter, Scene
 
+# Cross-user data isolation is enforced here but not yet documented as a
+# formal requirement -- see issue #136.
 class NovelScopingTests(TestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(username='user1', password='pass1')
@@ -26,6 +28,8 @@ class NovelScopingTests(TestCase):
         response = self.client.get(reverse('novel_detail', kwargs={'pk': self.novel2.pk}))
         self.assertEqual(response.status_code, 404)
 
+# Word-count calculation mechanics (markdown exclusion) are tested here but
+# not yet documented as a formal requirement -- see issue #137.
 class WordCountTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='pass')
