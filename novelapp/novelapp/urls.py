@@ -20,5 +20,3 @@ urlpatterns = [
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]
 
-if settings.DEBUG:
-    urlpatterns += [path('test-recorder/', include('test_recorder.urls'))]

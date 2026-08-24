@@ -154,6 +154,3 @@ LOGOUT_REDIRECT_URL = 'login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Debug-only apps
-if DEBUG:
-    INSTALLED_APPS += ['test_recorder']
