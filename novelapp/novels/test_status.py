@@ -11,6 +11,10 @@ Note: the requirements doc's Gherkin writes the first status option as
 "Not Started" (MANUSCRIPT_STATUS_CHOICES in novels/models.py). This is a
 cosmetic difference in the doc text, not a functional one, so labels are
 compared against the real choices rather than the doc's exact casing.
+
+Each test carries a @pytest.mark.trace(...) tag mapping it back to its
+requirements-doc test ID -- see conftest.py for how this surfaces in -v
+output, and data/requirements/phase-1-run-2-scope.yaml for the full scope.
 """
 import pytest
 from django.urls import reverse
@@ -42,6 +46,7 @@ def status_labels(form):
 
 
 # T-FUNC-0229.01.01
+@pytest.mark.trace("T-FUNC-0229.01.01")
 @pytest.mark.django_db
 def test_status_options_available_on_novel(auth_client):
     response = auth_client.get(reverse('novel_create'))
@@ -49,6 +54,7 @@ def test_status_options_available_on_novel(auth_client):
 
 
 # T-FUNC-0229.01.02
+@pytest.mark.trace("T-FUNC-0229.01.02")
 @pytest.mark.django_db
 def test_status_options_available_on_part(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -57,6 +63,7 @@ def test_status_options_available_on_part(auth_client, user):
 
 
 # T-FUNC-0229.01.03
+@pytest.mark.trace("T-FUNC-0229.01.03")
 @pytest.mark.django_db
 def test_status_options_available_on_chapter(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -65,6 +72,7 @@ def test_status_options_available_on_chapter(auth_client, user):
 
 
 # T-FUNC-0229.01.04
+@pytest.mark.trace("T-FUNC-0229.01.04")
 @pytest.mark.django_db
 def test_status_options_available_on_scene(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -76,6 +84,7 @@ def test_status_options_available_on_scene(auth_client, user):
 
 
 # T-FUNC-0229.02.01
+@pytest.mark.trace("T-FUNC-0229.02.01")
 @pytest.mark.django_db
 def test_status_defaults_to_not_started_on_novel(auth_client):
     response = auth_client.get(reverse('novel_create'))
@@ -83,6 +92,7 @@ def test_status_defaults_to_not_started_on_novel(auth_client):
 
 
 # T-FUNC-0229.02.02
+@pytest.mark.trace("T-FUNC-0229.02.02")
 @pytest.mark.django_db
 def test_status_defaults_to_not_started_on_part(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -91,6 +101,7 @@ def test_status_defaults_to_not_started_on_part(auth_client, user):
 
 
 # T-FUNC-0229.02.03
+@pytest.mark.trace("T-FUNC-0229.02.03")
 @pytest.mark.django_db
 def test_status_defaults_to_not_started_on_chapter(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -99,6 +110,7 @@ def test_status_defaults_to_not_started_on_chapter(auth_client, user):
 
 
 # T-FUNC-0229.02.04
+@pytest.mark.trace("T-FUNC-0229.02.04")
 @pytest.mark.django_db
 def test_status_defaults_to_not_started_on_scene(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)

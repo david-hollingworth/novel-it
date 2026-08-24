@@ -11,6 +11,10 @@ there is no cancel endpoint to POST to. These are tested as "a GET request
 to the view renders the confirmation/edit page and does not change state",
 which is the closest backend-testable equivalent of "the user did not
 submit anything."
+
+Each test carries a @pytest.mark.trace(...) tag mapping it back to its
+requirements-doc test ID -- see conftest.py for how this surfaces in -v
+output, and data/requirements/phase-1-run-2-scope.yaml for the full scope.
 """
 import pytest
 from django.urls import reverse
@@ -40,6 +44,7 @@ def auth_client(client, user):
 
 
 # T-FUNC-0201.01.01
+@pytest.mark.trace("T-FUNC-0201.01.01")
 @pytest.mark.django_db
 def test_create_novel_success(auth_client, user):
     response = auth_client.post(reverse('novel_create'), {
@@ -56,6 +61,7 @@ def test_create_novel_success(auth_client, user):
 
 
 # T-FUNC-0201.01.02
+@pytest.mark.trace("T-FUNC-0201.01.02")
 @pytest.mark.django_db
 def test_create_novel_without_title_fails(auth_client, user):
     response = auth_client.post(reverse('novel_create'), {
@@ -69,6 +75,7 @@ def test_create_novel_without_title_fails(auth_client, user):
 
 
 # T-UI-0201.01.01
+@pytest.mark.trace("T-UI-0201.01.01")
 @pytest.mark.django_db
 def test_add_novel_form_presents_all_required_fields(auth_client):
     response = auth_client.get(reverse('novel_create'))
@@ -76,6 +83,7 @@ def test_add_novel_form_presents_all_required_fields(auth_client):
 
 
 # T-FUNC-0201.02.01
+@pytest.mark.trace("T-FUNC-0201.02.01")
 @pytest.mark.django_db
 def test_parts_enabled_defaults_to_no_on_add_novel(auth_client):
     response = auth_client.get(reverse('novel_create'))
@@ -83,6 +91,7 @@ def test_parts_enabled_defaults_to_no_on_add_novel(auth_client):
 
 
 # T-UI-0203.01.01
+@pytest.mark.trace("T-UI-0203.01.01")
 @pytest.mark.django_db
 def test_edit_novel_form_presents_all_editable_fields(auth_client, user):
     novel = NovelFactory(user=user)
@@ -91,6 +100,7 @@ def test_edit_novel_form_presents_all_editable_fields(auth_client, user):
 
 
 # T-FUNC-0202.01.01
+@pytest.mark.trace("T-FUNC-0202.01.01")
 @pytest.mark.django_db
 def test_novel_structure_without_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -104,6 +114,7 @@ def test_novel_structure_without_parts(auth_client, user):
 
 
 # T-FUNC-0202.02.01
+@pytest.mark.trace("T-FUNC-0202.02.01")
 @pytest.mark.django_db
 def test_novel_structure_with_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -116,6 +127,7 @@ def test_novel_structure_with_parts(auth_client, user):
 
 
 # T-FUNC-0203.01.01
+@pytest.mark.trace("T-FUNC-0203.01.01")
 @pytest.mark.django_db
 def test_edit_novel_success(auth_client, user):
     novel = NovelFactory(user=user, title='Original Title')
@@ -133,6 +145,7 @@ def test_edit_novel_success(auth_client, user):
 
 
 # T-FUNC-0203.01.02
+@pytest.mark.trace("T-FUNC-0203.01.02")
 @pytest.mark.django_db
 def test_cancel_editing_novel_leaves_it_unchanged(auth_client, user):
     novel = NovelFactory(user=user, title='Original Title')
@@ -143,6 +156,7 @@ def test_cancel_editing_novel_leaves_it_unchanged(auth_client, user):
 
 
 # T-FUNC-0203.02.01
+@pytest.mark.trace("T-FUNC-0203.02.01")
 @pytest.mark.django_db
 def test_enable_parts_on_existing_novel(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -158,6 +172,7 @@ def test_enable_parts_on_existing_novel(auth_client, user):
 
 
 # T-FUNC-0203.02.02
+@pytest.mark.trace("T-FUNC-0203.02.02")
 @pytest.mark.django_db
 def test_disable_parts_moves_existing_chapters_to_novel_level(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -185,6 +200,7 @@ def test_disable_parts_moves_existing_chapters_to_novel_level(auth_client, user)
 
 
 # T-FUNC-0204.01.01
+@pytest.mark.trace("T-FUNC-0204.01.01")
 @pytest.mark.django_db
 def test_archive_novel_success(auth_client, user):
     novel = NovelFactory(user=user, archived=False)
@@ -199,6 +215,7 @@ def test_archive_novel_success(auth_client, user):
 
 
 # T-FUNC-0204.01.02
+@pytest.mark.trace("T-FUNC-0204.01.02")
 @pytest.mark.django_db
 def test_cancel_archiving_novel_leaves_it_unarchived(auth_client, user):
     novel = NovelFactory(user=user, archived=False)
@@ -209,6 +226,7 @@ def test_cancel_archiving_novel_leaves_it_unarchived(auth_client, user):
 
 
 # T-FUNC-0205.01.01
+@pytest.mark.trace("T-FUNC-0205.01.01")
 @pytest.mark.django_db
 def test_restore_novel_success(auth_client, user):
     novel = NovelFactory(user=user, archived=True)
@@ -225,6 +243,7 @@ def test_restore_novel_success(auth_client, user):
 
 
 # T-FUNC-0205.01.02
+@pytest.mark.trace("T-FUNC-0205.01.02")
 @pytest.mark.django_db
 def test_cancel_unarchiving_novel_leaves_it_archived(auth_client, user):
     novel = NovelFactory(user=user, archived=True)
@@ -235,6 +254,7 @@ def test_cancel_unarchiving_novel_leaves_it_archived(auth_client, user):
 
 
 # T-FUNC-0206.01.01
+@pytest.mark.trace("T-FUNC-0206.01.01")
 @pytest.mark.django_db
 def test_delete_novel_success(auth_client, user):
     novel = NovelFactory(user=user)
@@ -246,6 +266,7 @@ def test_delete_novel_success(auth_client, user):
 
 
 # T-FUNC-0206.01.02
+@pytest.mark.trace("T-FUNC-0206.01.02")
 @pytest.mark.django_db
 def test_cancel_deleting_novel_leaves_it_intact(auth_client, user):
     novel = NovelFactory(user=user)
@@ -255,6 +276,7 @@ def test_cancel_deleting_novel_leaves_it_intact(auth_client, user):
 
 
 # T-DATA-0206.01.01
+@pytest.mark.trace("T-DATA-0206.01.01")
 @pytest.mark.django_db
 def test_delete_novel_cascades_to_children(auth_client, user):
     novel = NovelFactory(user=user)
@@ -276,6 +298,7 @@ def test_delete_novel_cascades_to_children(auth_client, user):
 
 
 # T-FUNC-0209.01.01
+@pytest.mark.trace("T-FUNC-0209.01.01")
 @pytest.mark.django_db
 def test_novels_board_displayed_after_login(auth_client, user):
     novel1 = NovelFactory(user=user)
@@ -285,6 +308,7 @@ def test_novels_board_displayed_after_login(auth_client, user):
 
 
 # T-FUNC-0209.01.02
+@pytest.mark.trace("T-FUNC-0209.01.02")
 @pytest.mark.django_db
 def test_archived_novels_do_not_appear_on_novels_board(auth_client, user):
     active_novel = NovelFactory(user=user, archived=False)
@@ -295,6 +319,7 @@ def test_archived_novels_do_not_appear_on_novels_board(auth_client, user):
 
 
 # T-FUNC-0210.01.01
+@pytest.mark.trace("T-FUNC-0210.01.01")
 @pytest.mark.django_db
 def test_navigate_into_novel_without_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -308,6 +333,7 @@ def test_navigate_into_novel_without_parts(auth_client, user):
 
 
 # T-FUNC-0210.01.02
+@pytest.mark.trace("T-FUNC-0210.01.02")
 @pytest.mark.django_db
 def test_navigate_into_novel_with_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)

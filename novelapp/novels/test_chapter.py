@@ -5,6 +5,10 @@ Backend/state tests for Chapter CRUD, converted from content/requirements/
 Covers the "Chapter" sub-batch: T-FUNC-0217.01.01 through T-DATA-0221.01.01
 (13 tests). See novels/test_novel.py's module docstring for the Cancel-
 scenario testing rationale.
+
+Each test carries a @pytest.mark.trace(...) tag mapping it back to its
+requirements-doc test ID -- see conftest.py for how this surfaces in -v
+output, and data/requirements/phase-1-run-2-scope.yaml for the full scope.
 """
 import pytest
 from django.urls import reverse
@@ -29,6 +33,7 @@ def auth_client(client, user):
 
 
 # T-FUNC-0217.01.01
+@pytest.mark.trace("T-FUNC-0217.01.01")
 @pytest.mark.django_db
 def test_create_chapter_in_novel_without_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -46,6 +51,7 @@ def test_create_chapter_in_novel_without_parts(auth_client, user):
 
 
 # T-FUNC-0217.01.02
+@pytest.mark.trace("T-FUNC-0217.01.02")
 @pytest.mark.django_db
 def test_create_chapter_in_novel_with_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -64,6 +70,7 @@ def test_create_chapter_in_novel_with_parts(auth_client, user):
 
 
 # T-UI-0217.01.01
+@pytest.mark.trace("T-UI-0217.01.01")
 @pytest.mark.django_db
 def test_add_chapter_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -72,6 +79,7 @@ def test_add_chapter_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0218.01.01
+@pytest.mark.trace("T-FUNC-0218.01.01")
 @pytest.mark.django_db
 def test_edit_chapter_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -88,6 +96,7 @@ def test_edit_chapter_success(auth_client, user):
 
 
 # T-FUNC-0218.01.02
+@pytest.mark.trace("T-FUNC-0218.01.02")
 @pytest.mark.django_db
 def test_cancel_editing_chapter_leaves_it_unchanged(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -102,6 +111,7 @@ def test_cancel_editing_chapter_leaves_it_unchanged(auth_client, user):
 
 
 # T-UI-0218.01.01
+@pytest.mark.trace("T-UI-0218.01.01")
 @pytest.mark.django_db
 def test_edit_chapter_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -114,6 +124,7 @@ def test_edit_chapter_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0219.01.01
+@pytest.mark.trace("T-FUNC-0219.01.01")
 @pytest.mark.django_db
 def test_archive_chapter_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -132,6 +143,7 @@ def test_archive_chapter_success(auth_client, user):
 
 
 # T-FUNC-0219.01.02
+@pytest.mark.trace("T-FUNC-0219.01.02")
 @pytest.mark.django_db
 def test_cancel_archiving_chapter_leaves_it_unarchived(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -146,6 +158,7 @@ def test_cancel_archiving_chapter_leaves_it_unarchived(auth_client, user):
 
 
 # T-FUNC-0220.01.01
+@pytest.mark.trace("T-FUNC-0220.01.01")
 @pytest.mark.django_db
 def test_restore_chapter_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -167,6 +180,7 @@ def test_restore_chapter_success(auth_client, user):
 
 
 # T-FUNC-0220.01.02
+@pytest.mark.trace("T-FUNC-0220.01.02")
 @pytest.mark.django_db
 def test_cancel_unarchiving_chapter_leaves_it_archived(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -181,6 +195,7 @@ def test_cancel_unarchiving_chapter_leaves_it_archived(auth_client, user):
 
 
 # T-FUNC-0221.01.01
+@pytest.mark.trace("T-FUNC-0221.01.01")
 @pytest.mark.django_db
 def test_delete_chapter_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -196,6 +211,7 @@ def test_delete_chapter_success(auth_client, user):
 
 
 # T-FUNC-0221.01.02
+@pytest.mark.trace("T-FUNC-0221.01.02")
 @pytest.mark.django_db
 def test_cancel_deleting_chapter_leaves_it_intact(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -209,6 +225,7 @@ def test_cancel_deleting_chapter_leaves_it_intact(auth_client, user):
 
 
 # T-DATA-0221.01.01
+@pytest.mark.trace("T-DATA-0221.01.01")
 @pytest.mark.django_db
 def test_delete_chapter_cascades_to_scenes(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)

@@ -6,6 +6,10 @@ data/requirements/phase-1-run-2-scope.yaml.
 Covers the "Scene" sub-batch: T-FUNC-0223.01.01 through T-FUNC-0228.01.01
 (6 tests). Scene archive/restore/delete (T-FUNC-0225/0226/0227) are excluded
 from Run 2 -- not yet implemented -- so they're not covered here.
+
+Each test carries a @pytest.mark.trace(...) tag mapping it back to its
+requirements-doc test ID -- see conftest.py for how this surfaces in -v
+output, and data/requirements/phase-1-run-2-scope.yaml for the full scope.
 """
 import json
 
@@ -32,6 +36,7 @@ def auth_client(client, user):
 
 
 # T-FUNC-0223.01.01
+@pytest.mark.trace("T-FUNC-0223.01.01")
 @pytest.mark.django_db
 def test_create_scene_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -53,6 +58,7 @@ def test_create_scene_success(auth_client, user):
 
 
 # T-UI-0223.01.01
+@pytest.mark.trace("T-UI-0223.01.01")
 @pytest.mark.django_db
 def test_add_scene_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -65,6 +71,7 @@ def test_add_scene_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0224.01.01
+@pytest.mark.trace("T-FUNC-0224.01.01")
 @pytest.mark.django_db
 def test_edit_scene_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -83,6 +90,7 @@ def test_edit_scene_success(auth_client, user):
 
 
 # T-FUNC-0224.01.02
+@pytest.mark.trace("T-FUNC-0224.01.02")
 @pytest.mark.django_db
 def test_cancel_editing_scene_leaves_it_unchanged(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -99,6 +107,7 @@ def test_cancel_editing_scene_leaves_it_unchanged(auth_client, user):
 
 
 # T-UI-0224.01.01
+@pytest.mark.trace("T-UI-0224.01.01")
 @pytest.mark.django_db
 def test_edit_scene_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -113,6 +122,7 @@ def test_edit_scene_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0228.01.01
+@pytest.mark.trace("T-FUNC-0228.01.01")
 @pytest.mark.django_db
 def test_relocate_scene_to_another_chapter(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)

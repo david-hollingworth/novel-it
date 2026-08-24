@@ -11,6 +11,10 @@ module docstring for the Cancel-scenario testing rationale. The "options
 displayed" scenarios (T-FUNC-0213.01.01/.05/.07) are tested by asserting on
 the has_active_chapters/is_last_active_part context returned by a GET to the
 archive URL -- those flags are what the template branches its prompt on.
+
+Each test carries a @pytest.mark.trace(...) tag mapping it back to its
+requirements-doc test ID -- see conftest.py for how this surfaces in -v
+output, and data/requirements/phase-1-run-2-scope.yaml for the full scope.
 """
 import pytest
 from django.urls import reverse
@@ -35,6 +39,7 @@ def auth_client(client, user):
 
 
 # T-FUNC-0211.01.01
+@pytest.mark.trace("T-FUNC-0211.01.01")
 @pytest.mark.django_db
 def test_create_part_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -51,6 +56,7 @@ def test_create_part_success(auth_client, user):
 
 
 # T-FUNC-0211.01.02
+@pytest.mark.trace("T-FUNC-0211.01.02")
 @pytest.mark.django_db
 def test_create_part_and_assign_existing_chapters(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -75,6 +81,7 @@ def test_create_part_and_assign_existing_chapters(auth_client, user):
 
 
 # T-FUNC-0211.01.03
+@pytest.mark.trace("T-FUNC-0211.01.03")
 @pytest.mark.django_db
 def test_add_part_button_not_available_when_parts_disabled(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=False)
@@ -84,6 +91,7 @@ def test_add_part_button_not_available_when_parts_disabled(auth_client, user):
 
 
 # T-UI-0211.01.01
+@pytest.mark.trace("T-UI-0211.01.01")
 @pytest.mark.django_db
 def test_add_part_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -92,6 +100,7 @@ def test_add_part_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0212.01.01
+@pytest.mark.trace("T-FUNC-0212.01.01")
 @pytest.mark.django_db
 def test_edit_part_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -106,6 +115,7 @@ def test_edit_part_success(auth_client, user):
 
 
 # T-FUNC-0212.01.02
+@pytest.mark.trace("T-FUNC-0212.01.02")
 @pytest.mark.django_db
 def test_cancel_editing_part_leaves_it_unchanged(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -118,6 +128,7 @@ def test_cancel_editing_part_leaves_it_unchanged(auth_client, user):
 
 
 # T-UI-0212.01.01
+@pytest.mark.trace("T-UI-0212.01.01")
 @pytest.mark.django_db
 def test_edit_part_form_presents_all_required_fields(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -128,6 +139,7 @@ def test_edit_part_form_presents_all_required_fields(auth_client, user):
 
 
 # T-FUNC-0213.01.01
+@pytest.mark.trace("T-FUNC-0213.01.01")
 @pytest.mark.django_db
 def test_archive_part_options_with_multiple_active_parts(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -143,6 +155,7 @@ def test_archive_part_options_with_multiple_active_parts(auth_client, user):
 
 
 # T-FUNC-0213.01.02
+@pytest.mark.trace("T-FUNC-0213.01.02")
 @pytest.mark.django_db
 def test_archive_part_moving_chapters_to_another_part(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -163,6 +176,7 @@ def test_archive_part_moving_chapters_to_another_part(auth_client, user):
 
 
 # T-FUNC-0213.01.03
+@pytest.mark.trace("T-FUNC-0213.01.03")
 @pytest.mark.django_db
 def test_archive_part_and_its_chapters(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -182,6 +196,7 @@ def test_archive_part_and_its_chapters(auth_client, user):
 
 
 # T-FUNC-0213.01.04
+@pytest.mark.trace("T-FUNC-0213.01.04")
 @pytest.mark.django_db
 def test_cancel_archiving_part_leaves_it_unarchived(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -194,6 +209,7 @@ def test_cancel_archiving_part_leaves_it_unarchived(auth_client, user):
 
 
 # T-FUNC-0213.01.05
+@pytest.mark.trace("T-FUNC-0213.01.05")
 @pytest.mark.django_db
 def test_archive_part_options_with_only_one_active_part(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -208,6 +224,7 @@ def test_archive_part_options_with_only_one_active_part(auth_client, user):
 
 
 # T-FUNC-0213.01.06
+@pytest.mark.trace("T-FUNC-0213.01.06")
 @pytest.mark.django_db
 def test_archive_final_part_moves_chapters_to_novel(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -232,6 +249,7 @@ def test_archive_final_part_moves_chapters_to_novel(auth_client, user):
 
 
 # T-FUNC-0213.01.07
+@pytest.mark.trace("T-FUNC-0213.01.07")
 @pytest.mark.django_db
 def test_archive_part_with_no_chapters(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -251,6 +269,7 @@ def test_archive_part_with_no_chapters(auth_client, user):
 
 
 # T-FUNC-0214.01.01
+@pytest.mark.trace("T-FUNC-0214.01.01")
 @pytest.mark.django_db
 def test_restore_part_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -271,6 +290,7 @@ def test_restore_part_success(auth_client, user):
 
 
 # T-FUNC-0214.01.02
+@pytest.mark.trace("T-FUNC-0214.01.02")
 @pytest.mark.django_db
 def test_cancel_unarchiving_part_leaves_it_archived(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -283,6 +303,7 @@ def test_cancel_unarchiving_part_leaves_it_archived(auth_client, user):
 
 
 # T-FUNC-0215.01.01
+@pytest.mark.trace("T-FUNC-0215.01.01")
 @pytest.mark.django_db
 def test_delete_part_success(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -297,6 +318,7 @@ def test_delete_part_success(auth_client, user):
 
 
 # T-FUNC-0215.01.02
+@pytest.mark.trace("T-FUNC-0215.01.02")
 @pytest.mark.django_db
 def test_cancel_deleting_part_leaves_it_intact(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
@@ -308,6 +330,7 @@ def test_cancel_deleting_part_leaves_it_intact(auth_client, user):
 
 
 # T-DATA-0215.01.01
+@pytest.mark.trace("T-DATA-0215.01.01")
 @pytest.mark.django_db
 def test_delete_part_cascades_to_chapters_and_scenes(auth_client, user):
     novel = NovelFactory(user=user, parts_enabled=True)
