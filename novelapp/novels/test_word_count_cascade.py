@@ -15,17 +15,6 @@ novel.update_word_count(). Archiving/restoring/deleting a chapter or part
 doesn't go through Scene.save(), so each view explicitly re-triggers the
 relevant update_word_count() call -- these tests check that it actually
 does, and does so correctly.
-
-NOTE on T-FUNC-0304.05.06 ("Deleting a part reduces the novel word count"):
-part_delete_view calls part.delete() but does not call
-novel.update_word_count() afterward, and there's no signal filling that gap
-(checked novels/apps.py and novels/signals.py -- no signals module exists).
-This is a regression from an incomplete fix in #79 (which correctly fixed
-chapter deletion but missed the equivalent call for part deletion). Tracked
-as issue #138; the test below is marked xfail(strict=True) referencing it
-so it doesn't break CI, but will flip to a loud failure if someone fixes
-the bug without updating this marker -- a silent pass would be worse than
-the current visible xfail.
 """
 import pytest
 from django.urls import reverse
@@ -246,12 +235,7 @@ def test_deleting_chapter_reduces_part_word_count_when_parts_enabled(auth_client
 # T-FUNC-0304.05.06
 @pytest.mark.trace("T-FUNC-0304.05.06")
 @pytest.mark.django_db
-@pytest.mark.xfail(reason="part_delete_view doesn't update novel word count -- issue #138", strict=True)
 def test_deleting_part_reduces_novel_word_count(auth_client, user):
-    """
-    See module docstring -- part_delete_view doesn't call
-    novel.update_word_count() after part.delete(). Tracked as issue #138.
-    """
     novel = NovelFactory(user=user, parts_enabled=True)
     part = PartFactory(novel=novel)
     chapter = ChapterFactory(part=part)

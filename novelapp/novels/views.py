@@ -213,6 +213,7 @@ def part_delete_view(request, novel_pk, part_pk):
     if request.method == 'POST':
         title = part.title
         part.delete()  # cascades to chapters and scenes via FK CASCADE
+        novel.update_word_count()
         messages.success(request, f"Part '{title}' permanently deleted.")
         return redirect('novel_detail', pk=novel_pk)
     return render(request, 'novels/part_confirm_delete.html', {
