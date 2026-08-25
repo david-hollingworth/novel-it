@@ -1,6 +1,15 @@
 """
 Project-wide pytest configuration.
 """
+import os
+
+# Belt-and-braces alongside the same setting in settings_test.py: setting it
+# here too, at the top of the root conftest.py, is more reliably early than
+# relying on Django settings-module import timing, which can race against
+# pytest-playwright's session-scoped fixtures when multiple test files are
+# collected together. See settings_test.py for the full explanation of why
+# this is needed and why it's safe (no async views/consumers in this project).
+os.environ.setdefault('DJANGO_ALLOW_ASYNC_UNSAFE', 'true')
 
 
 def pytest_collection_modifyitems(session, config, items):
