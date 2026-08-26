@@ -33,16 +33,14 @@ class AuthenticationTests(TestCase):
         self.assertTemplateUsed(response, 'accounts/register.html')
 
     def test_registration_functionality(self):
-        response = self.client.post(reverse('register'), {
-            'username': 'newuser',
-            'password': 'newpassword123',
-            'password_confirm': 'newpassword123' # Standard UserCreationForm fields? No, it's password1 and password2
-        }, follow=True) # UserCreationForm fields are usually username, password1, password2
-        # Let's check the form or just use valid data
+        # UserRegistrationForm extends UserCreationForm with a required
+        # email field, and register_view redirects to login (not dashboard)
+        # on success -- there's no auto-login after registration.
         response = self.client.post(reverse('register'), {
             'username': 'newuser2',
+            'email': 'newuser2@example.com',
             'password1': 'newpassword123',
             'password2': 'newpassword123'
         })
-        self.assertRedirects(response, reverse('dashboard'))
+        self.assertRedirects(response, reverse('login'))
         self.assertTrue(User.objects.filter(username='newuser2').exists())
